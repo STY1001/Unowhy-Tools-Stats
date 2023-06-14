@@ -1,0 +1,23 @@
+{
+  "name": "unowhy-tools-stats",
+  "version": "1.0.0",
+  "description": "A small API to get stats of Unowhy Tools (no user data are collected)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/STY1001/Unowhy-Tools-Stats.git"
+  },
+  "author": "STY1001",
+  "license": "none",
+  "bugs": {
+    "url": "https://github.com/STY1001/Unowhy-Tools-Stats/issues"
+  },
+  "homepage": "https://github.com/STY1001/Unowhy-Tools-Stats#readme",
+  "dependencies": {
+    "express": "^4.18.2",
+    "prettier": "^2.8.8"
+  }
+}
