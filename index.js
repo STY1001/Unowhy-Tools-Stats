@@ -38,7 +38,7 @@ async function updateJSON(id, lang, launchmod, trayena) {
       };
     }
 
-    await fs.writeFile('data.json', JSON.stringify(jsonData), 'utf8');
+    await fs.writeFile('data\\id.json', JSON.stringify(jsonData), 'utf8');
     console.log('\nData updated');
   } catch (error) {
     console.error(error);
@@ -60,7 +60,7 @@ app.post('/ut-stats', async (req, res) => {
   console.log('Trayena:', trayena);
 
   await updateJSON(id, lang, launchmod, trayena);
-  await formatJSONFile('data.json', 'data.json');
+  await formatJSONFile('data\\id.json', 'data\\id.json');
   res.send('Ok');
 });
 
