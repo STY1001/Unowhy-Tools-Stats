@@ -17,21 +17,21 @@ async function formatJSONFile(inputFilePath, outputFilePath) {
   }
 }
 
-async function updateJSON(id, lang, launchmod, trayena) {
+async function updateJSON(id, lang, launchmode, trayena) {
   try {
     const data = await fs.readFile('data.json', 'utf8');
     let jsonData = JSON.parse(data);
 
     if (jsonData.hasOwnProperty(id)) {
       jsonData[id].lang = lang;
-      jsonData[id].launch.normal += launchmod === 'normal' ? 1 : 0;
-      jsonData[id].launch.tray += launchmod === 'tray' ? 1 : 0;
+      jsonData[id].launch.normal += launchmode === 'normal' ? 1 : 0;
+      jsonData[id].launch.tray += launchmode === 'tray' ? 1 : 0;
       jsonData[id].trayena = trayena;
     } else {
       jsonData[id] = {
         launch: {
-          normal: launchmod === 'normal' ? 1 : 0,
-          tray: launchmod === 'tray' ? 1 : 0
+          normal: launchmode === 'normal' ? 1 : 0,
+          tray: launchmode === 'tray' ? 1 : 0
         },
         lang: lang,
         trayena: trayena
@@ -52,14 +52,14 @@ app.post('/ut-stats', async (req, res) => {
   console.log(jsonDataPost);
   console.log('JSON End\n');
 
-  const { id, lang, launchmod, trayena } = req.body;
+  const { id, lang, launchmode, trayena } = req.body;
 
   console.log('ID:', id);
   console.log('Lang:', lang);
-  console.log('Launchmod:', launchmod);
+  console.log('Launchmode:', launchmode);
   console.log('Trayena:', trayena);
 
-  await updateJSON(id, lang, launchmod, trayena);
+  await updateJSON(id, lang, launchmode, trayena);
   await formatJSONFile('data\\id.json', 'data\\id.json');
   res.send('Ok');
 });
