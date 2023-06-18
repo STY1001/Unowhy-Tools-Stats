@@ -19,7 +19,7 @@ async function formatJSONFile(inputFilePath, outputFilePath) {
 
 async function updateJSON(id, lang, launchmode, trayena) {
   try {
-    const data = await fs.readFile('data.json', 'utf8');
+    const data = await fs.readFile('data\\id.json', 'utf8');
     let jsonData = JSON.parse(data);
 
     if (jsonData.hasOwnProperty(id)) {
