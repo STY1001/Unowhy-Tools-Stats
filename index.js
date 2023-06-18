@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const fs = require('fs').promises;
 const prettier = require('prettier');
-const { Mutex } = require('async-mutex');
+const mutex = require('async-mutex');
 app.use(express.json());
 
 async function formatJSONFile(inputFilePath, outputFilePath) {
@@ -46,7 +46,6 @@ async function updateJSON(id, lang, launchmode, trayena) {
 }
 
 app.post('/ut-stats', async (req, res) => {
-  const release = await mutex.acquire();
   try {
     console.log('\n\nNew request:');
     const jsonData = req.body;
@@ -63,13 +62,12 @@ app.post('/ut-stats', async (req, res) => {
     console.log('Trayena:', trayena);
 
     await updateJSON(id, lang, launchmode, trayena);
-    await formatJSONFile('data\\id.json', 'data\\id.json');
+    //await formatJSONFile('data\\id.json', 'data\\id.json');
     res.send('Ok');
   } catch (error) {
     console.error(error);
     res.status(500).send('Internal Server Error');
   } finally {
-    release();
   }
 });
 
