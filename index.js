@@ -13,7 +13,16 @@ async function formatJSONFile(inputFilePath, outputFilePath) {
     await fs.writeFile(outputFilePath, formattedJSON, 'utf8');
     console.log(`JSON formated\n`);
   } catch (error) {
-    
+  }
+}
+
+async function formatJSONConst(inputConst) {
+  try {
+    const data = inputConst;
+    const jsonData = JSON.parse(data);
+    const formattedJSON = prettier.format(JSON.stringify(jsonData), { parser: 'json' });
+    return formattedJSON;
+  } catch (error) {
   }
 }
 
@@ -48,7 +57,7 @@ async function updateJSON(id, lang, launchmode, trayena) {
 app.post('/ut-stats', async (req, res) => {
   const jsonData = req.body;
   console.log('JSON:');
-  const jsonDataPost = jsonData;
+  const jsonDataPost = await formatJSONConst(jsonData);
   console.log(jsonDataPost);
   console.log('JSON End\n');
 
