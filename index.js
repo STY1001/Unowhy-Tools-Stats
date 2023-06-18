@@ -45,22 +45,31 @@ async function updateJSON(id, lang, launchmode, trayena) {
 }
 
 app.post('/ut-stats', async (req, res) => {
-  const jsonData = req.body;
-  console.log('JSON:');
-  const jsonDataPost = jsonData;
-  console.log(jsonDataPost);
-  console.log('JSON End\n');
+  const release = await mutex.acquire();
+  try {
+    console.log('\n\nNew request:');
+    const jsonData = req.body;
+    console.log('\nJSON:');
+    const jsonDataPost = jsonData;
+    console.log(jsonDataPost);
+    console.log('JSON End\n');
 
-  const { id, lang, launchmode, trayena } = req.body;
+    const { id, lang, launchmode, trayena } = req.body;
 
-  console.log('ID:', id);
-  console.log('Lang:', lang);
-  console.log('Launchmode:', launchmode);
-  console.log('Trayena:', trayena);
+    console.log('ID:', id);
+    console.log('Lang:', lang);
+    console.log('Launchmode:', launchmode);
+    console.log('Trayena:', trayena);
 
-  await updateJSON(id, lang, launchmode, trayena);
-  await formatJSONFile('data\\id.json', 'data\\id.json');
-  res.send('Ok');
+    await updateJSON(id, lang, launchmode, trayena);
+    await formatJSONFile('data\\id.json', 'data\\id.json');
+    res.send('Ok');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  } finally {
+    release();
+  }
 });
 
 app.listen(3000, () => {
