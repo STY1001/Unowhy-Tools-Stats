@@ -48,7 +48,7 @@ async function updateJSON(id, lang, launchmode, trayena) {
 app.post('/ut-stats', async (req, res) => {
   const jsonData = req.body;
   console.log('JSON:');
-  const jsonDataPost = await formatJSON(jsonData);
+  const jsonDataPost = jsonData;
   console.log(jsonDataPost);
   console.log('JSON End\n');
 
