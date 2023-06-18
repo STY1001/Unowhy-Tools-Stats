@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const fs = require('fs').promises;
 const prettier = require('prettier');
+const { Mutex } = require('async-mutex');
 app.use(express.json());
 
 async function formatJSONFile(inputFilePath, outputFilePath) {
