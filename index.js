@@ -74,6 +74,7 @@ app.post('/ut-stats', async (req, res) => {
     console.log('Debug version:', isdeb);
 
     await updateJSON(id, version, build, lang, launchmode, trayena, isdeb);
+    await formatJSONFile('data\\id.json', 'data\\id.formatted.json')
     console.log('Done !')
     res.send('Ok');
   } catch (error) {
