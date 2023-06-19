@@ -3,6 +3,7 @@ const app = express();
 const fs = require('fs').promises;
 const prettier = require('prettier');
 const mutex = require('async-mutex');
+const moment = require('moment');
 app.use(express.json());
 
 async function formatJSONFile(inputFilePath, outputFilePath) {
@@ -23,11 +24,13 @@ async function updateJSON(id, lang, launchmode, trayena) {
     let jsonData = JSON.parse(data);
 
     if (jsonData.hasOwnProperty(id)) {
+      console.log('ID already exist, updating data');
       jsonData[id].lang = lang;
       jsonData[id].launch.normal += launchmode === 'normal' ? 1 : 0;
       jsonData[id].launch.tray += launchmode === 'tray' ? 1 : 0;
       jsonData[id].trayena = trayena;
     } else {
+      console.log('ID does not already exist, creating data');
       jsonData[id] = {
         launch: {
           normal: launchmode === 'normal' ? 1 : 0,
@@ -47,7 +50,8 @@ async function updateJSON(id, lang, launchmode, trayena) {
 
 app.post('/ut-stats', async (req, res) => {
   try {
-    console.log('\n\nNew request:');
+    const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
+    console.log('\n\n\n[', currentTime, ']  New request:');
     const jsonData = req.body;
     console.log('\nJSON:');
     const jsonDataPost = jsonData;
@@ -62,7 +66,7 @@ app.post('/ut-stats', async (req, res) => {
     console.log('Trayena:', trayena);
 
     await updateJSON(id, lang, launchmode, trayena);
-    //await formatJSONFile('data\\id.json', 'data\\id.json');
+    console.log('Done !')
     res.send('Ok');
   } catch (error) {
     console.error(error);
