@@ -5,6 +5,7 @@ const prettier = require('prettier');
 const moment = require('moment');
 app.use(express.json());
 
+//Function to format JSON
 async function formatJSONFile(inputFilePath, outputFilePath) {
   try {
     const data = await fs.readFile(inputFilePath, 'utf8');
@@ -17,6 +18,7 @@ async function formatJSONFile(inputFilePath, outputFilePath) {
   }
 }
 
+//Function to update data in JSON
 async function updateJSON(id, version, build, lang, launchmode, trayena, isdeb) {
   try {
     const data = await fs.readFile('data\\id.json', 'utf8');
