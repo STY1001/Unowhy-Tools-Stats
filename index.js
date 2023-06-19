@@ -2,7 +2,6 @@ const express = require('express');
 const app = express();
 const fs = require('fs').promises;
 const prettier = require('prettier');
-const mutex = require('async-mutex');
 const moment = require('moment');
 app.use(express.json());
 
@@ -18,31 +17,37 @@ async function formatJSONFile(inputFilePath, outputFilePath) {
   }
 }
 
-async function updateJSON(id, lang, launchmode, trayena) {
+async function updateJSON(id, version, buid, lang, launchmode, trayena, isdeb) {
   try {
     const data = await fs.readFile('data\\id.json', 'utf8');
     let jsonData = JSON.parse(data);
 
     if (jsonData.hasOwnProperty(id)) {
-      console.log('ID already exist, updating data');
+      console.log('\nID already exist, updating data');
+      jsonData[id].version = version;
+      jsonData[id].buid = buid;
       jsonData[id].lang = lang;
       jsonData[id].launch.normal += launchmode === 'normal' ? 1 : 0;
       jsonData[id].launch.tray += launchmode === 'tray' ? 1 : 0;
       jsonData[id].trayena = trayena;
+      jsonData[id].isdeb = isdeb;
     } else {
-      console.log('ID does not already exist, creating data');
+      console.log('\nID does not already exist, creating data');
       jsonData[id] = {
         launch: {
           normal: launchmode === 'normal' ? 1 : 0,
           tray: launchmode === 'tray' ? 1 : 0
         },
+        version: version,
+        buid: buid,
         lang: lang,
-        trayena: trayena
+        trayena: trayena,
+        isdeb: isdeb
       };
     }
 
     await fs.writeFile('data\\id.json', JSON.stringify(jsonData), 'utf8');
-    console.log('\nData updated');
+    console.log('Data updated');
   } catch (error) {
     console.error(error);
   }
@@ -51,21 +56,24 @@ async function updateJSON(id, lang, launchmode, trayena) {
 app.post('/ut-stats', async (req, res) => {
   try {
     const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
-    console.log('\n\n\n[', currentTime, ']  New request:');
+    console.log('\n\n\n[', currentTime, ']  New HTTP POST request:');
     const jsonData = req.body;
     console.log('\nJSON:');
     const jsonDataPost = jsonData;
     console.log(jsonDataPost);
     console.log('JSON End\n');
 
-    const { id, lang, launchmode, trayena } = req.body;
+    const { id, version, buid, lang, launchmode, trayena, isdeb } = req.body;
 
     console.log('ID:', id);
+    console.log('Version:', version);
+    console.log('Build:', buid);
     console.log('Lang:', lang);
-    console.log('Launchmode:', launchmode);
-    console.log('Trayena:', trayena);
+    console.log('Launch Mode:', launchmode);
+    console.log('Tray Enabled:', trayena);
+    console.log('Debug version:', isdeb);
 
-    await updateJSON(id, lang, launchmode, trayena);
+    await updateJSON(id, version, buid, lang, launchmode, trayena, isdeb);
     console.log('Done !')
     res.send('Ok');
   } catch (error) {
