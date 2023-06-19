@@ -17,7 +17,7 @@ async function formatJSONFile(inputFilePath, outputFilePath) {
   }
 }
 
-async function updateJSON(id, version, buid, lang, launchmode, trayena, isdeb) {
+async function updateJSON(id, version, build, lang, launchmode, trayena, isdeb) {
   try {
     const data = await fs.readFile('data\\id.json', 'utf8');
     let jsonData = JSON.parse(data);
@@ -25,7 +25,7 @@ async function updateJSON(id, version, buid, lang, launchmode, trayena, isdeb) {
     if (jsonData.hasOwnProperty(id)) {
       console.log('\nID already exist, updating data');
       jsonData[id].version = version;
-      jsonData[id].buid = buid;
+      jsonData[id].build = build;
       jsonData[id].lang = lang;
       jsonData[id].launch.normal += launchmode === 'normal' ? 1 : 0;
       jsonData[id].launch.tray += launchmode === 'tray' ? 1 : 0;
@@ -39,7 +39,7 @@ async function updateJSON(id, version, buid, lang, launchmode, trayena, isdeb) {
           tray: launchmode === 'tray' ? 1 : 0
         },
         version: version,
-        buid: buid,
+        build: build,
         lang: lang,
         trayena: trayena,
         isdeb: isdeb
@@ -63,17 +63,17 @@ app.post('/ut-stats', async (req, res) => {
     console.log(jsonDataPost);
     console.log('JSON End\n');
 
-    const { id, version, buid, lang, launchmode, trayena, isdeb } = req.body;
+    const { id, version, build, lang, launchmode, trayena, isdeb } = req.body;
 
     console.log('ID:', id);
     console.log('Version:', version);
-    console.log('Build:', buid);
+    console.log('Build:', build);
     console.log('Lang:', lang);
     console.log('Launch Mode:', launchmode);
     console.log('Tray Enabled:', trayena);
     console.log('Debug version:', isdeb);
 
-    await updateJSON(id, version, buid, lang, launchmode, trayena, isdeb);
+    await updateJSON(id, version, build, lang, launchmode, trayena, isdeb);
     console.log('Done !')
     res.send('Ok');
   } catch (error) {
