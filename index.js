@@ -78,12 +78,73 @@ app.post('/ut-stats', async (req, res) => {
     await updateJSON(id, version, build, lang, launchmode, trayena, isdeb);
     await formatJSONFile('data\\id.json', 'data\\id.formatted.json')
     console.log('Done !')
-    res.send('Ok');
+    res.send('OK');
   } catch (error) {
     console.error(error);
     res.status(500).send('Internal Server Error');
   } finally {
   }
+});
+
+app.get('/ut-stats', async (req, res) => {
+  const repconst = 'Unowhy Tools Stats by STY1001 │ https://github.com/STY1001/Unowhy-Tools-Stats │ API is OK';
+  res.setHeader('Content-Type', 'application/json');
+  res.send(repconst);
+});
+
+app.get('/ut-stats/get-stats', async (req, res) => {
+  const inputFilePath = 'data\\id.json';
+  const data = await fs.readFile(inputFilePath, 'utf8');
+  const jsonData = JSON.parse(data);
+
+  const idCount = Object.keys(jsonData).length;
+  let isdebCount = 0;
+  for (const id in jsonData) {
+    if (jsonData[id].isdeb === true) {
+      isdebCount++;
+    }
+  }
+  let launchnCount = 0;
+  let launchtCount = 0;
+  for (const id in jsonData) {
+    launchnCount = launchnCount + jsonData[id].launch.normal;
+    launchtCount = launchtCount + jsonData[id].launch.tray;
+  }
+
+  const repconst = {
+    "idcount": idCount,
+    "isdebcount": isdebCount,
+    "versioncount": {
+    },
+    "buildcount": {
+    },
+    "launchcount": {
+      "normal": launchnCount,
+      "tray": launchtCount
+    },
+  };
+
+  for (const id in jsonData) {
+    const version = jsonData[id].version;
+    if (repconst.versioncount[version]) {
+      repconst.versioncount[version]++;
+    } else {
+      repconst.versioncount[version] = 1;
+    }
+  }
+
+  for (const id in jsonData) {
+    const build = jsonData[id].build;
+    if (repconst.buildcount[build]) {
+      repconst.buildcount[build]++;
+    } else {
+      repconst.buildcount[build] = 1;
+    }
+  }
+
+  const repconstString = JSON.stringify(repconst, null, 2);
+  res.setHeader('Content-Type', 'application/json');
+  res.send(repconstString);
 });
 
 app.listen(3000, () => {
