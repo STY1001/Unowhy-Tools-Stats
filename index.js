@@ -104,6 +104,12 @@ app.get('/ut-stats/get-stats', async (req, res) => {
       isdebCount++;
     }
   }
+  let trayenaCount = 0;
+  for (const id in jsonData) {
+    if (jsonData[id].trayena === true) {
+      trayenaCount++;
+    }
+  }
   let launchnCount = 0;
   let launchtCount = 0;
   for (const id in jsonData) {
@@ -113,16 +119,28 @@ app.get('/ut-stats/get-stats', async (req, res) => {
 
   const repconst = {
     "idcount": idCount,
-    "isdebcount": isdebCount,
     "versioncount": {
     },
     "buildcount": {
     },
+    "langcount":{
+    },
+    "isdebcount": isdebCount,
+    "trayenacount": trayenaCount,
     "launchcount": {
       "normal": launchnCount,
       "tray": launchtCount
     },
   };
+
+  for (const id in jsonData) {
+    const lang = jsonData[id].lang;
+    if (repconst.langcount[lang]) {
+      repconst.langcount[lang]++;
+    } else {
+      repconst.langcount[lang] = 1;
+    }
+  }
 
   for (const id in jsonData) {
     const version = jsonData[id].version;
