@@ -63,7 +63,7 @@ app.post('/ut-stats', async (req, res) => {
     console.log('\n\n\n[', currentTime, ']  New HTTP POST request:');
     const jsonData = req.body;
     console.log('\nJSON:');
-    const jsonDataPost = jsonData;
+    const jsonDataPost = JSON.stringify(jsonData, null, 2);
     console.log(jsonDataPost);
     console.log('JSON End\n');
 
@@ -90,9 +90,15 @@ app.post('/ut-stats', async (req, res) => {
 });
 
 app.get('/ut-stats', async (req, res) => {
-  const repconst = 'Unowhy Tools Stats by STY1001 │ https://github.com/STY1001/Unowhy-Tools-Stats │ API is OK';
+  const repconst = {
+    'Name': 'Unowhy Tools Stats',
+    'Author': 'STY1001',
+    'Git': 'https://github.com/STY1001/Unowhy-Tools-Stats.git',
+    'Status': 'OK'
+  };
+  const repconstString = JSON.stringify(repconst, null, 2)
   res.setHeader('Content-Type', 'application/json');
-  res.send(repconst);
+  res.send(repconstString);
 });
 
 app.get('/ut-stats/get-stats', async (req, res) => {
@@ -121,18 +127,18 @@ app.get('/ut-stats/get-stats', async (req, res) => {
   }
 
   const repconst = {
-    "idcount": idCount,
-    "versioncount": {
+    'idcount': idCount,
+    'versioncount': {
     },
-    "buildcount": {
+    'buildcount': {
     },
-    "langcount":{
+    'langcount':{
     },
-    "isdebcount": isdebCount,
-    "trayenacount": trayenaCount,
-    "launchcount": {
-      "normal": launchnCount,
-      "tray": launchtCount
+    'isdebcount': isdebCount,
+    'trayenacount': trayenaCount,
+    'launchcount': {
+      'normal': launchnCount,
+      'tray': launchtCount
     },
   };
 
