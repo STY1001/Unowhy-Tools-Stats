@@ -19,7 +19,7 @@ async function formatJSONFile(inputFilePath, outputFilePath) {
 }
 
 //Function to update data in JSON
-async function updateJSON(id, version, build, lang, launchmode, trayena, isdeb) {
+async function updateJSON(id, version, build, lang, launchmode, trayena, isdeb, wifiena) {
   try {
     const data = await fs.readFile('data\\id.json', 'utf8');
     let jsonData = JSON.parse(data);
@@ -33,6 +33,7 @@ async function updateJSON(id, version, build, lang, launchmode, trayena, isdeb) 
       jsonData[id].launch.tray += launchmode === 'tray' ? 1 : 0;
       jsonData[id].trayena = trayena;
       jsonData[id].isdeb = isdeb;
+      jsonData[id].wifiena = wifiena;
     } else {
       console.log('\nID does not already exist, creating data');
       jsonData[id] = {
@@ -44,7 +45,8 @@ async function updateJSON(id, version, build, lang, launchmode, trayena, isdeb) 
         build: build,
         lang: lang,
         trayena: trayena,
-        isdeb: isdeb
+        isdeb: isdeb,
+        wifiena: wifiena
       };
     }
 
@@ -65,7 +67,7 @@ app.post('/ut-stats', async (req, res) => {
     console.log(jsonDataPost);
     console.log('JSON End\n');
 
-    const { id, version, build, lang, launchmode, trayena, isdeb } = req.body;
+    const { id, version, build, lang, launchmode, trayena, isdeb, wifiena } = req.body;
 
     console.log('ID:', id);
     console.log('Version:', version);
@@ -74,8 +76,9 @@ app.post('/ut-stats', async (req, res) => {
     console.log('Launch Mode:', launchmode);
     console.log('Tray Enabled:', trayena);
     console.log('Debug version:', isdeb);
+    console.log('Wifi Sync Enabled:', wifiena)
 
-    await updateJSON(id, version, build, lang, launchmode, trayena, isdeb);
+    await updateJSON(id, version, build, lang, launchmode, trayena, isdeb, wifiena);
     await formatJSONFile('data\\id.json', 'data\\id.formatted.json')
     console.log('Done !')
     res.send('OK');
