@@ -102,11 +102,14 @@ app.get('/ut-stats', async (req, res) => {
 });
 
 app.get('/ut-stats/get-stats', async (req, res) => {
-  const inputFilePath = 'data\\id.json';
-  const data = await fs.readFile(inputFilePath, 'utf8');
+  var inputFilePath = 'data\\id.json';
+  var data = await fs.readFile(inputFilePath, 'utf8');
   const jsonData = JSON.parse(data);
+  inputFilePath = 'data\\ignoredid.json';
+  data = await fs.readFile(inputFilePath, 'utf8');
+  const ignoredJsonData = JSON.parse(data);
 
-  const idCount = Object.keys(jsonData).length;
+  const idCount = Object.keys(jsonData).length - Object.keys(ignoredJsonData).length;
   let isdebCount = 0;
   let trayenaCount = 0;
   let wifienaCount = 0;
@@ -114,17 +117,19 @@ app.get('/ut-stats/get-stats', async (req, res) => {
   let launchtCount = 0;
 
   for (const id in jsonData) {
-    if (jsonData[id].isdeb === true) {
-      isdebCount++;
+    if (!ignoredJsonData[id]) {
+      if (jsonData[id].isdeb === true) {
+        isdebCount++;
+      }
+      if (jsonData[id].trayena === true) {
+        trayenaCount++;
+      }
+      if (jsonData[id].wifiena === true) {
+        wifienaCount++;
+      }
+      launchnCount = launchnCount + jsonData[id].launch.normal;
+      launchtCount = launchtCount + jsonData[id].launch.tray;
     }
-    if (jsonData[id].trayena === true) {
-      trayenaCount++;
-    }
-    if(jsonData[id].wifiena === true){
-      wifienaCount++;
-    }
-    launchnCount = launchnCount + jsonData[id].launch.normal;
-    launchtCount = launchtCount + jsonData[id].launch.tray;
   }
 
   const repconst = {
@@ -133,7 +138,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
     },
     'buildcount': {
     },
-    'langcount':{
+    'langcount': {
     },
     'isdebcount': isdebCount,
     'trayenacount': trayenaCount,
@@ -145,29 +150,25 @@ app.get('/ut-stats/get-stats', async (req, res) => {
   };
 
   for (const id in jsonData) {
-    const lang = jsonData[id].lang;
-    if (repconst.langcount[lang]) {
-      repconst.langcount[lang]++;
-    } else {
-      repconst.langcount[lang] = 1;
-    }
-  }
-
-  for (const id in jsonData) {
-    const version = jsonData[id].version;
-    if (repconst.versioncount[version]) {
-      repconst.versioncount[version]++;
-    } else {
-      repconst.versioncount[version] = 1;
-    }
-  }
-
-  for (const id in jsonData) {
-    const build = jsonData[id].build;
-    if (repconst.buildcount[build]) {
-      repconst.buildcount[build]++;
-    } else {
-      repconst.buildcount[build] = 1;
+    if (!ignoredJsonData[id]) {
+      const lang = jsonData[id].lang;
+      if (repconst.langcount[lang]) {
+        repconst.langcount[lang]++;
+      } else {
+        repconst.langcount[lang] = 1;
+      }
+      const version = jsonData[id].version;
+      if (repconst.versioncount[version]) {
+        repconst.versioncount[version]++;
+      } else {
+        repconst.versioncount[version] = 1;
+      }
+      const build = jsonData[id].build;
+      if (repconst.buildcount[build]) {
+        repconst.buildcount[build]++;
+      } else {
+        repconst.buildcount[build] = 1;
+      }
     }
   }
 
