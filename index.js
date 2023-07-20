@@ -120,7 +120,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
     if (jsonData[id].trayena === true) {
       trayenaCount++;
     }
-    if(jsonDataPost[id].wifiena === true){
+    if(jsonData[id].wifiena === true){
       wifienaCount++;
     }
     launchnCount = launchnCount + jsonData[id].launch.normal;
