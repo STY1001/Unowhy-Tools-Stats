@@ -108,20 +108,21 @@ app.get('/ut-stats/get-stats', async (req, res) => {
 
   const idCount = Object.keys(jsonData).length;
   let isdebCount = 0;
+  let trayenaCount = 0;
+  let wifienaCount = 0;
+  let launchnCount = 0;
+  let launchtCount = 0;
+
   for (const id in jsonData) {
     if (jsonData[id].isdeb === true) {
       isdebCount++;
     }
-  }
-  let trayenaCount = 0;
-  for (const id in jsonData) {
     if (jsonData[id].trayena === true) {
       trayenaCount++;
     }
-  }
-  let launchnCount = 0;
-  let launchtCount = 0;
-  for (const id in jsonData) {
+    if(jsonDataPost[id].wifiena === true){
+      wifienaCount++;
+    }
     launchnCount = launchnCount + jsonData[id].launch.normal;
     launchtCount = launchtCount + jsonData[id].launch.tray;
   }
@@ -136,6 +137,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
     },
     'isdebcount': isdebCount,
     'trayenacount': trayenaCount,
+    'wifienacount': wifienaCount,
     'launchcount': {
       'normal': launchnCount,
       'tray': launchtCount
