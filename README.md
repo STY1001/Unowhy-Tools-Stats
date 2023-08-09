@@ -9,3 +9,4 @@ Collected data:
 - Start mode (normal/tray)
 - If tray is enabled
 - If is a debug version
+- If wifi sync is enabled
