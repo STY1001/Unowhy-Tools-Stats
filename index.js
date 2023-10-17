@@ -131,8 +131,8 @@ app.get('/ut-stats/get-stats', async (req, res) => {
   for (const id in jsonData) {
     if (!ignoredJsonData[id]) {
       if (jsonData[id].isdeb) isdebCount++;
-      if (jsonData[id].trayena === true) trayenaCount++;
-      if (jsonData[id].wifiena === true) wifienaCount++;
+      if (jsonData[id].trayena) trayenaCount++;
+      if (jsonData[id].wifiena) wifienaCount++;
       
       launchnCount += jsonData[id].launch.normal + jsonData[id].launch.tray;
     }
