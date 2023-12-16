@@ -57,7 +57,8 @@ async function updateJSON(id, version, build, lang, launchmode, trayena, isdeb, 
       lang,
       trayena,
       isdeb,
-      wifiena
+      wifiena,
+      lastrequest: moment().format('YYYY-MM-DD HH:mm:ss')
     };
 
     await fs.writeFile('data\\id.json', JSON.stringify(jsonData), 'utf8');
@@ -120,35 +121,106 @@ app.get('/ut-stats/get-stats', async (req, res) => {
   data = await fs.readFile('data\\ignoredid.json', 'utf8');
   const ignoredJsonData = JSON.parse(data);
 
-  let idCount = Object.keys(jsonData).length - Object.keys(ignoredJsonData).length;
 
-  let isdebCount = 0;
-  let trayenaCount = 0;
-  let wifienaCount = 0;
-  let launchnCount = 0;
-  let launchtCount = 0;
+
+  let totalidCount = Object.keys(jsonData).length - Object.keys(ignoredJsonData).length;
+  let totalisdebCount = 0;
+  let totaltrayenaCount = 0;
+  let totalwifienaCount = 0;
+  let totallaunchnCount = 0;
+  let totallaunchtCount = 0;
+
+  let activeidCount = 0;
+  let activeisdebCount = 0;
+  let activetrayenaCount = 0;
+  let activewifienaCount = 0;
+  let activelaunchnCount = 0;
+  let activelaunchtCount = 0;
+
+  let outdatedidCount = 0;
+  let outdatedisdebCount = 0;
+  let outdatedtrayenaCount = 0;
+  let outdatedwifienaCount = 0;
+  let outdatedlaunchnCount = 0;
+  let outdatedlaunchtCount = 0;
 
   for (const id in jsonData) {
     if (!ignoredJsonData[id]) {
-      if (jsonData[id].isdeb) isdebCount++;
-      if (jsonData[id].trayena) trayenaCount++;
-      if (jsonData[id].wifiena) wifienaCount++;
-      
-      launchnCount += jsonData[id].launch.normal + jsonData[id].launch.tray;
+      if (jsonData[id].isdeb) totalisdebCount++;
+      if (jsonData[id].trayena) totaltrayenaCount++;
+      if (jsonData[id].wifiena) totalwifienaCount++;
+      totallaunchnCount += jsonData[id].launch.normal;
+      totallaunchtCount += jsonData[id].launch.tray;
     }
   }
 
-  const repconst = {
-    idcount: idCount,
+  for (const id in jsonData) {
+    if (!ignoredJsonData[id]) {
+      const lastRequestDate = moment(jsonData[id].lastrequest, 'YYYY-MM-DD HH:mm:ss');
+      if (lastRequestDate.isAfter(moment().subtract(1, 'months'))) {
+        activeidCount++;
+        if (jsonData[id].isdeb) activeisdebCount++;
+        if (jsonData[id].trayena) activetrayenaCount++;
+        if (jsonData[id].wifiena) activewifienaCount++;
+        activelaunchnCount += jsonData[id].launch.normal;
+        activelaunchtCount += jsonData[id].launch.tray;
+      }
+    }
+  }
+
+  for (const id in jsonData) {
+    if (!ignoredJsonData[id]) {
+      const lastRequestDate = moment(jsonData[id].lastrequest, 'YYYY-MM-DD HH:mm:ss');
+      if (lastRequestDate.isBefore(moment().subtract(1, 'months'))) {
+        outdatedidCount++;
+        if (jsonData[id].isdeb) outdatedisdebCount++;
+        if (jsonData[id].trayena) outdatedtrayenaCount++;
+        if (jsonData[id].wifiena) outdatedwifienaCount++;
+        outdatedlaunchnCount += jsonData[id].launch.normal;
+        outdatedlaunchtCount += jsonData[id].launch.tray;
+      }
+    }
+  }
+
+  const totalconst = {
+    idcount: totalidCount,
     versioncount: {},
     buildcount: {},
     langcount: {},
-    isdebcount: isdebCount,
-    trayenacount: trayenaCount,
-    wifienacount: wifienaCount,
+    isdebcount: totalisdebCount,
+    trayenacount: totaltrayenaCount,
+    wifienacount: totalwifienaCount,
     launchcount: {
-      normal: launchnCount,
-      tray: launchtCount
+      normal: totallaunchnCount,
+      tray: totallaunchtCount
+    }
+  };
+
+  const activeconst = {
+    idcount: activeidCount,
+    versioncount: {},
+    buildcount: {},
+    langcount: {},
+    isdebcount: activeisdebCount,
+    trayenacount: activetrayenaCount,
+    wifienacount: activewifienaCount,
+    launchcount: {
+      normal: activelaunchnCount,
+      tray: activelaunchtCount
+    }
+  };
+
+  const outdatedconst = {
+    idcount: outdatedidCount,
+    versioncount: {},
+    buildcount: {},
+    langcount: {},
+    isdebcount: outdatedisdebCount,
+    trayenacount: outdatedtrayenaCount,
+    wifienacount: outdatedwifienaCount,
+    launchcount: {
+      normal: outdatedlaunchnCount,
+      tray: outdatedlaunchtCount
     }
   };
 
@@ -156,27 +228,93 @@ app.get('/ut-stats/get-stats', async (req, res) => {
     if (!ignoredJsonData[id]) {
       const lang = jsonData[id].lang;
 
-      if (repconst.langcount[lang]) {
-        repconst.langcount[lang]++;
+      if (totalconst.langcount[lang]) {
+        totalconst.langcount[lang]++;
       } else {
-        repconst.langcount[lang] = 1;
+        totalconst.langcount[lang] = 1;
       }
 
       const version = jsonData[id].version;
 
-      if (repconst.versioncount[version]) {
-        repconst.versioncount[version]++;
+      if (totalconst.versioncount[version]) {
+        totalconst.versioncount[version]++;
       } else {
-        repconst.versioncount[version] = 1;
+        totalconst.versioncount[version] = 1;
       }
 
       const build = jsonData[id].build;
-      if (repconst.buildcount[build]) {
-        repconst.buildcount[build]++;
+      if (totalconst.buildcount[build]) {
+        totalconst.buildcount[build]++;
       } else {
-        repconst.buildcount[build] = 1;
+        totalconst.buildcount[build] = 1;
       }
     }
+  }
+
+  for (const id in jsonData) {
+    if (!ignoredJsonData[id]) {
+      const lastRequestDate = moment(jsonData[id].lastrequest, 'YYYY-MM-DD HH:mm:ss');
+      if (lastRequestDate.isAfter(moment().subtract(1, 'months'))) {
+        const lang = jsonData[id].lang;
+
+        if (activeconst.langcount[lang]) {
+          activeconst.langcount[lang]++;
+        } else {
+          activeconst.langcount[lang] = 1;
+        }
+
+        const version = jsonData[id].version;
+
+        if (activeconst.versioncount[version]) {
+          activeconst.versioncount[version]++;
+        } else {
+          activeconst.versioncount[version] = 1;
+        }
+
+        const build = jsonData[id].build;
+        if (activeconst.buildcount[build]) {
+          activeconst.buildcount[build]++;
+        } else {
+          activeconst.buildcount[build] = 1;
+        }
+      }
+    }
+  }
+
+  for (const id in jsonData) {
+    if (!ignoredJsonData[id]) {
+      const lastRequestDate = moment(jsonData[id].lastrequest, 'YYYY-MM-DD HH:mm:ss');
+      if (lastRequestDate.isBefore(moment().subtract(1, 'months'))) {
+        const lang = jsonData[id].lang;
+
+        if (outdatedconst.langcount[lang]) {
+          outdatedconst.langcount[lang]++;
+        } else {
+          outdatedconst.langcount[lang] = 1;
+        }
+
+        const version = jsonData[id].version;
+
+        if (outdatedconst.versioncount[version]) {
+          outdatedconst.versioncount[version]++;
+        } else {
+          outdatedconst.versioncount[version] = 1;
+        }
+
+        const build = jsonData[id].build;
+        if (outdatedconst.buildcount[build]) {
+          outdatedconst.buildcount[build]++;
+        } else {
+          outdatedconst.buildcount[build] = 1;
+        }
+      }
+    }
+  }
+
+  const repconst = {
+    total: totalconst,
+    active: activeconst,
+    outdated: outdatedconst
   }
 
   const repconstString = JSON.stringify(repconst, null, 2);
