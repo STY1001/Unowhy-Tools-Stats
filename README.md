@@ -5,6 +5,7 @@ Collected data:
 - Install ID
 - Version
 - Build
+- UTS Version
 - Selected lang
 - Start mode (normal/tray)
 - If tray is enabled
