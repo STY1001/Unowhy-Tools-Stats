@@ -30,13 +30,14 @@ async function formatJSONFile(inputFilePath, outputFilePath) {
  * @param {string} id - The identifier
  * @param {string} version - The version
  * @param {string} build - The build
+ * @param {string} utsversion - The UTS version
  * @param {string} lang - The language
  * @param {string} launchmode - The launch mode
  * @param {boolean} trayena - The tray enabled status
  * @param {boolean} isdeb - The debug version status
  * @param {boolean} wifiena - The WiFi sync enabled status
  */
-async function updateJSON(id, version, build, lang, launchmode, trayena, isdeb, wifiena) {
+async function updateJSON(id, version, build, utsversion, lang, launchmode, trayena, isdeb, wifiena) {
   try {
     const data = await fs.readFile('data\\id.json', 'utf8');
     let jsonData = JSON.parse(data);
@@ -54,6 +55,7 @@ async function updateJSON(id, version, build, lang, launchmode, trayena, isdeb, 
       },
       version,
       build,
+      utsversion,
       lang,
       trayena,
       isdeb,
@@ -79,18 +81,19 @@ app.post('/ut-stats', async (req, res) => {
     console.log(jsonDataPost);
     console.log('JSON End\n');
 
-    const { id, version, build, lang, launchmode, trayena, isdeb, wifiena } = req.body;
+    const { id, version, build, utsversion, lang, launchmode, trayena, isdeb, wifiena } = req.body;
 
     console.log('ID:', id);
     console.log('Version:', version);
     console.log('Build:', build);
+    console.log('UTSVersion:', utsversion);
     console.log('Lang:', lang);
     console.log('Launch Mode:', launchmode);
     console.log('Tray Enabled:', trayena);
     console.log('Debug version:', isdeb);
     console.log('Wifi Sync Enabled:', wifiena);
 
-    await updateJSON(id, version, build, lang, launchmode, trayena, isdeb, wifiena);
+    await updateJSON(id, version, build, utsversion, lang, launchmode, trayena, isdeb, wifiena);
     await formatJSONFile('data\\id.json', 'data\\id.formatted.json');
 
     console.log('Done !');
@@ -186,6 +189,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
     idcount: totalidCount,
     versioncount: {},
     buildcount: {},
+    utsversioncount: {},
     langcount: {},
     isdebcount: totalisdebCount,
     trayenacount: totaltrayenaCount,
@@ -200,6 +204,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
     idcount: activeidCount,
     versioncount: {},
     buildcount: {},
+    utsversioncount: {},
     langcount: {},
     isdebcount: activeisdebCount,
     trayenacount: activetrayenaCount,
@@ -214,6 +219,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
     idcount: outdatedidCount,
     versioncount: {},
     buildcount: {},
+    utsversioncount: {},
     langcount: {},
     isdebcount: outdatedisdebCount,
     trayenacount: outdatedtrayenaCount,
@@ -248,6 +254,13 @@ app.get('/ut-stats/get-stats', async (req, res) => {
       } else {
         totalconst.buildcount[build] = 1;
       }
+
+      const utsversion = jsonData[id].utsversion;
+      if (totalconst.utsversioncount[utsversion]) {
+        totalconst.utsversioncount[utsversion]++;
+      } else {
+        totalconst.utsversioncount[utsversion] = 1;
+      }
     }
   }
 
@@ -276,6 +289,13 @@ app.get('/ut-stats/get-stats', async (req, res) => {
           activeconst.buildcount[build]++;
         } else {
           activeconst.buildcount[build] = 1;
+        }
+
+        const utsversion = jsonData[id].utsversion;
+        if (activeconst.utsversioncount[utsversion]) {
+          activeconst.utsversioncount[utsversion]++;
+        } else {
+          activeconst.utsversioncount[utsversion] = 1;
         }
       }
     }
@@ -306,6 +326,13 @@ app.get('/ut-stats/get-stats', async (req, res) => {
           outdatedconst.buildcount[build]++;
         } else {
           outdatedconst.buildcount[build] = 1;
+        }
+
+        const utsversion = jsonData[id].utsversion;
+        if (outdatedconst.utsversioncount[utsversion]) {
+          outdatedconst.utsversioncount[utsversion]++;
+        } else {
+          outdatedconst.utsversioncount[utsversion] = 1;
         }
       }
     }
