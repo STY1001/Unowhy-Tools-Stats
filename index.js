@@ -26,18 +26,19 @@ async function formatJSONFile(inputFilePath, outputFilePath) {
 }
 
 /**
- * Function to update JSON data based on specific parameters
+ * Function to update ID JSON data based on specific parameters
  * @param {string} id - The identifier
  * @param {string} version - The version
  * @param {string} build - The build
  * @param {string} utsversion - The UTS version
+ * @param {string} pcyear - The PC year
  * @param {string} lang - The language
  * @param {string} launchmode - The launch mode
  * @param {boolean} trayena - The tray enabled status
  * @param {boolean} isdeb - The debug version status
  * @param {boolean} wifiena - The WiFi sync enabled status
  */
-async function updateJSON(id, version, build, utsversion, lang, launchmode, trayena, isdeb, wifiena) {
+async function updateID(id, version, build, utsversion, pcyear, lang, launchmode, trayena, isdeb, wifiena) {
   try {
     const data = await fs.readFile('data\\id.json', 'utf8');
     let jsonData = JSON.parse(data);
@@ -56,6 +57,7 @@ async function updateJSON(id, version, build, utsversion, lang, launchmode, tray
       version,
       build,
       utsversion,
+      pcyear,
       lang,
       trayena,
       isdeb,
@@ -71,30 +73,89 @@ async function updateJSON(id, version, build, utsversion, lang, launchmode, tray
   }
 }
 
+/**
+ * Function to update usage JSON data based on specific parameters
+ * @param {string} id - The identifier
+ * @param {string} action - The action
+*/
+async function updateUsage(id, action) {
+  try {
+    const data = await fs.readFile('data\\usage.json', 'utf8');
+    let jsonData = JSON.parse(data);
+
+    if (jsonData.hasOwnProperty(id)) {
+      console.log('\nID already exists, updating data');
+    } else {
+      console.log('\nID does not already exist, creating data');
+    }
+
+    if (jsonData[id]) {
+      jsonData[id][action] = jsonData[id][action] ? jsonData[id][action] + 1 : 1;
+    } else {
+      jsonData[id] = {
+        [action]: 1
+      };
+    }
+
+    await fs.writeFile('data\\usage.json', JSON.stringify(jsonData), 'utf8');
+
+    console.log('Data updated');
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 app.post('/ut-stats', async (req, res) => {
   try {
     const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
-    console.log(`\n\n\n[${currentTime}] New HTTP POST request:\nJSON:`);
+    console.log(`\n\n\n[${currentTime}] New HTTP POST request (/ut-stats):\nJSON:`);
 
     const jsonDataPost = JSON.stringify(req.body, null, 2);
 
     console.log(jsonDataPost);
     console.log('JSON End\n');
 
-    const { id, version, build, utsversion, lang, launchmode, trayena, isdeb, wifiena } = req.body;
+    const { id, version, build, utsversion, pcyear, lang, launchmode, trayena, isdeb, wifiena } = req.body;
 
     console.log('ID:', id);
     console.log('Version:', version);
     console.log('Build:', build);
-    console.log('UTSVersion:', utsversion);
+    console.log('UTS Version:', utsversion);
+    console.log('PC Year:', pcyear);
     console.log('Lang:', lang);
     console.log('Launch Mode:', launchmode);
     console.log('Tray Enabled:', trayena);
     console.log('Debug version:', isdeb);
     console.log('Wifi Sync Enabled:', wifiena);
 
-    await updateJSON(id, version, build, utsversion, lang, launchmode, trayena, isdeb, wifiena);
+    await updateID(id, version, build, utsversion, pcyear, lang, launchmode, trayena, isdeb, wifiena);
     await formatJSONFile('data\\id.json', 'data\\id.formatted.json');
+
+    console.log('Done !');
+    res.send('OK');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+app.post('/ut-stats/usage', async (req, res) => {
+  try {
+    const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
+    console.log(`\n\n\n[${currentTime}] New HTTP POST request (/ut-stats/usage):\nJSON:`);
+
+    const jsonDataPost = JSON.stringify(req.body, null, 2);
+
+    console.log(jsonDataPost);
+    console.log('JSON End\n');
+
+    const { id, action } = req.body;
+
+    console.log('ID:', id);
+    console.log('Action:', action);
+
+    await updateUsage(id, action);
+    await formatJSONFile('data\\usage.json', 'data\\usage.formatted.json');
 
     console.log('Done !');
     res.send('OK');
@@ -190,6 +251,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
     versioncount: {},
     buildcount: {},
     utsversioncount: {},
+    pcversioncount: {},
     langcount: {},
     isdebcount: totalisdebCount,
     trayenacount: totaltrayenaCount,
@@ -205,6 +267,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
     versioncount: {},
     buildcount: {},
     utsversioncount: {},
+    pcversioncount: {},
     langcount: {},
     isdebcount: activeisdebCount,
     trayenacount: activetrayenaCount,
@@ -220,6 +283,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
     versioncount: {},
     buildcount: {},
     utsversioncount: {},
+    pcversioncount: {},
     langcount: {},
     isdebcount: outdatedisdebCount,
     trayenacount: outdatedtrayenaCount,
@@ -261,6 +325,13 @@ app.get('/ut-stats/get-stats', async (req, res) => {
       } else {
         totalconst.utsversioncount[utsversion] = 1;
       }
+
+      const pcversion = jsonData[id].pcversion;
+      if (totalconst.pcversioncount[pcversion]) {
+        totalconst.pcversioncount[pcversion]++;
+      } else {
+        totalconst.pcversioncount[pcversion] = 1;
+      }
     }
   }
 
@@ -296,6 +367,13 @@ app.get('/ut-stats/get-stats', async (req, res) => {
           activeconst.utsversioncount[utsversion]++;
         } else {
           activeconst.utsversioncount[utsversion] = 1;
+        }
+
+        const pcversion = jsonData[id].pcversion;
+        if (activeconst.pcversioncount[pcversion]) {
+          activeconst.pcversioncount[pcversion]++;
+        } else {
+          activeconst.pcversioncount[pcversion] = 1;
         }
       }
     }
@@ -334,6 +412,13 @@ app.get('/ut-stats/get-stats', async (req, res) => {
         } else {
           outdatedconst.utsversioncount[utsversion] = 1;
         }
+
+        const pcversion = jsonData[id].pcversion;
+        if (outdatedconst.pcversioncount[pcversion]) {
+          outdatedconst.pcversioncount[pcversion]++;
+        } else {
+          outdatedconst.pcversioncount[pcversion] = 1;
+        }
       }
     }
   }
@@ -342,6 +427,36 @@ app.get('/ut-stats/get-stats', async (req, res) => {
     total: totalconst,
     active: activeconst,
     outdated: outdatedconst
+  }
+
+  const repconstString = JSON.stringify(repconst, null, 2);
+
+  res.setHeader('Content-Type', 'application/json');
+  res.send(repconstString);
+});
+
+app.get('/ut-stats/get-stats/usage', async (req, res) => {
+  let data = await fs.readFile('data\\usage.json', 'utf8');
+  const jsonData = JSON.parse(data);
+
+  let totalcount = 0;
+  let actioncount = {};
+
+  for (const id in jsonData) {
+    for (const action in jsonData[id]) {
+      totalcount += jsonData[id][action];
+
+      if (actioncount[action]) {
+        actioncount[action] += jsonData[id][action];
+      } else {
+        actioncount[action] = jsonData[id][action];
+      }
+    }
+  }
+
+  const repconst = {
+    totalcount,
+    actioncount
   }
 
   const repconstString = JSON.stringify(repconst, null, 2);
