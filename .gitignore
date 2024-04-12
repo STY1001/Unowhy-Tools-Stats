@@ -1,8 +1,3 @@
-data/usage.json
-data/usage.formatted.json
-data/id.json
-data/id.formatted.json
-data/ignoredid.json
-
+data
 node_modules
 package-lock.json
