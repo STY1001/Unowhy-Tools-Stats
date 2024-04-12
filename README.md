@@ -8,8 +8,10 @@ Collected data:
 - Version
 - Build
 - UTS Version
+- PC Year
 - Selected lang
 - Start mode (normal/tray)
 - If tray is enabled
 - If is a debug version
 - If wifi sync is enabled
+- Action with the app
