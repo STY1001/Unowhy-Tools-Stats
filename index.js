@@ -5,21 +5,20 @@ const prettier = require('prettier');
 const moment = require('moment');
 
 app.use(express.json());
+app.use(express.text({limit: '50mb'}));
 
 /**
  * Function to format a JSON file
- * @param {string} inputFilePath - The path of the input file
- * @param {string} outputFilePath - The path of the output file
+ * @param {string} inputFile - The path of the input JSON file
+ * @param {string} outputFile - The path of the output formatted JSON file
  */
-async function formatJSONFile(inputFilePath, outputFilePath) {
+async function formatJSONFile(inputFile, outputFile) {
   try {
-    const data = await fs.readFile(inputFilePath, 'utf8');
+    const data = await fs.readFile(inputFile, 'utf8');
     const jsonData = JSON.parse(data);
-    const formattedJSON = prettier.format(JSON.stringify(jsonData), { parser: 'json' });
-
-    await fs.writeFile(outputFilePath, formattedJSON, 'utf8');
-
-    console.log(`JSON formatted\n`);
+    const formattedData = prettier.format(JSON.stringify(jsonData), { parser: 'json' });
+    await fs.writeFile(outputFile, formattedData, 'utf8');
+    console.log('JSON file formatted');
   } catch (error) {
     console.error(error);
   }
@@ -105,6 +104,44 @@ async function updateUsage(id, action) {
   }
 }
 
+/**
+ * Function to update crash JSON data based on specific parameters
+ * @param {string} id - The identifier
+ * @param {string} version - The version
+ * @param {string} build - The build
+ * @param {string} utsversion - The UTS version
+ * @param {boolean} isdeb - The debug version status
+ * @param {string} crashid - The crash identifier
+ */
+async function updateCrash(id, version, build, utsversion, isdeb, crashid, message) {
+  try {
+    const data = await fs.readFile('data\\crash.json', 'utf8');
+    let jsonData = JSON.parse(data);
+
+    if (jsonData.hasOwnProperty(id)) {
+      console.log('\nID already exists, updating data');
+    } else {
+      console.log('\nID does not already exist, creating data');
+    };
+
+    jsonData[id] = jsonData[id] || {};
+    jsonData[id][crashid] = ({
+      version,
+      build,
+      utsversion,
+      isdeb,
+      message,
+      date: moment().format('YYYY-MM-DD HH:mm:ss')
+    });
+
+    await fs.writeFile('data\\crash.json', JSON.stringify(jsonData), 'utf8');
+
+    console.log('Data added');
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 app.post('/ut-stats', async (req, res) => {
   try {
     const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
@@ -157,6 +194,55 @@ app.post('/ut-stats/usage', async (req, res) => {
     await updateUsage(id, action);
     await formatJSONFile('data\\usage.json', 'data\\usage.formatted.json');
 
+    console.log('Done !');
+    res.send('OK');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+app.post('/ut-stats/crash', async (req, res) => {
+  try {
+    const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
+    console.log(`\n\n\n[${currentTime}] New HTTP POST request (/ut-stats/crash):\nJSON:`);
+
+    const jsonDataPost = JSON.stringify(req.body, null, 2);
+
+    console.log(jsonDataPost);
+    console.log('JSON End\n');
+
+    const { id, version, build, utsversion, isdeb, crashid, message } = req.body;
+
+    console.log('ID:', id);
+    console.log('Version:', version);
+    console.log('Build:', build);
+    console.log('UTS Version:', utsversion);
+    console.log('Debug version:', isdeb);
+    console.log('Crash ID:', crashid);
+    console.log('Message:', message);
+
+    await updateCrash(id, version, build, utsversion, isdeb, crashid, message);
+    await formatJSONFile('data\\crash.json', 'data\\crash.formatted.json');
+
+    console.log('Done !');
+    res.send('OK');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+app.post('/ut-stats/crash/logs', async (req, res) => {
+  try {
+    const crashid = req.headers['crashid'];
+    const logstext = req.body;
+    const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
+    console.log(`\n\n\n[${currentTime}] New HTTP POST request (/ut-stats/crash/logs):\n`);
+    console.log(`Crash ID: ${crashid}`);
+
+    await fs.writeFile(`data\\crash\\${crashid}.log`, logstext, 'utf8');
+    
     console.log('Done !');
     res.send('OK');
   } catch (error) {
