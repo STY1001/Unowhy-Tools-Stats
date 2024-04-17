@@ -5,7 +5,7 @@ const prettier = require('prettier');
 const moment = require('moment');
 
 app.use(express.json());
-app.use(express.text({limit: '50mb'}));
+app.use(express.text({limit: '10mb'}));
 
 /**
  * Function to format a JSON file
