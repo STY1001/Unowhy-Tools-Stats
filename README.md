@@ -15,3 +15,4 @@ Collected data:
 - If is a debug version
 - If wifi sync is enabled
 - Action with the app
+- Crash report
