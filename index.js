@@ -337,7 +337,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
     versioncount: {},
     buildcount: {},
     utsversioncount: {},
-    pcversioncount: {},
+    pcyearcount: {},
     langcount: {},
     isdebcount: totalisdebCount,
     trayenacount: totaltrayenaCount,
@@ -353,7 +353,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
     versioncount: {},
     buildcount: {},
     utsversioncount: {},
-    pcversioncount: {},
+    pcyearcount: {},
     langcount: {},
     isdebcount: activeisdebCount,
     trayenacount: activetrayenaCount,
@@ -369,7 +369,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
     versioncount: {},
     buildcount: {},
     utsversioncount: {},
-    pcversioncount: {},
+    pcyearcount: {},
     langcount: {},
     isdebcount: outdatedisdebCount,
     trayenacount: outdatedtrayenaCount,
@@ -412,11 +412,11 @@ app.get('/ut-stats/get-stats', async (req, res) => {
         totalconst.utsversioncount[utsversion] = 1;
       }
 
-      const pcversion = jsonData[id].pcversion;
-      if (totalconst.pcversioncount[pcversion]) {
-        totalconst.pcversioncount[pcversion]++;
+      const pcyear = jsonData[id].pcyear;
+      if (totalconst.pcyearcount[pcyear]) {
+        totalconst.pcyearcount[pcyear]++;
       } else {
-        totalconst.pcversioncount[pcversion] = 1;
+        totalconst.pcyearcount[pcyear] = 1;
       }
     }
   }
@@ -455,11 +455,11 @@ app.get('/ut-stats/get-stats', async (req, res) => {
           activeconst.utsversioncount[utsversion] = 1;
         }
 
-        const pcversion = jsonData[id].pcversion;
-        if (activeconst.pcversioncount[pcversion]) {
-          activeconst.pcversioncount[pcversion]++;
+        const pcyear = jsonData[id].pcyear;
+        if (activeconst.pcyearcount[pcyear]) {
+          activeconst.pcyearcount[pcyear]++;
         } else {
-          activeconst.pcversioncount[pcversion] = 1;
+          activeconst.pcyearcount[pcyear] = 1;
         }
       }
     }
@@ -499,11 +499,11 @@ app.get('/ut-stats/get-stats', async (req, res) => {
           outdatedconst.utsversioncount[utsversion] = 1;
         }
 
-        const pcversion = jsonData[id].pcversion;
-        if (outdatedconst.pcversioncount[pcversion]) {
-          outdatedconst.pcversioncount[pcversion]++;
+        const pcyear = jsonData[id].pcyear;
+        if (outdatedconst.pcyearcount[pcyear]) {
+          outdatedconst.pcyearcount[pcyear]++;
         } else {
-          outdatedconst.pcversioncount[pcversion] = 1;
+          outdatedconst.pcyearcount[pcyear] = 1;
         }
       }
     }
