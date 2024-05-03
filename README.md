@@ -16,3 +16,5 @@ Collected data:
 - If wifi sync is enabled
 - Action with the app
 - Crash report
+- If is default OS
+- OS Version
