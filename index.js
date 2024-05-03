@@ -31,13 +31,15 @@ async function formatJSONFile(inputFile, outputFile) {
  * @param {string} build - The build
  * @param {string} utsversion - The UTS version
  * @param {string} pcyear - The PC year
+ * @param {string} defaultos - The default OS status
+ * @param {string} osversion - The OS version
  * @param {string} lang - The language
  * @param {string} launchmode - The launch mode
  * @param {boolean} trayena - The tray enabled status
  * @param {boolean} isdeb - The debug version status
  * @param {boolean} wifiena - The WiFi sync enabled status
  */
-async function updateID(id, version, build, utsversion, pcyear, lang, launchmode, trayena, isdeb, wifiena) {
+async function updateID(id, version, build, utsversion, pcyear, defaultos, osversion, lang, launchmode, trayena, isdeb, wifiena) {
   try {
     const data = await fs.readFile('data\\id.json', 'utf8');
     let jsonData = JSON.parse(data);
@@ -57,6 +59,8 @@ async function updateID(id, version, build, utsversion, pcyear, lang, launchmode
       build,
       utsversion,
       pcyear,
+      defaultos,
+      osversion,
       lang,
       trayena,
       isdeb,
@@ -152,20 +156,22 @@ app.post('/ut-stats', async (req, res) => {
     console.log(jsonDataPost);
     console.log('JSON End\n');
 
-    const { id, version, build, utsversion, pcyear, lang, launchmode, trayena, isdeb, wifiena } = req.body;
+    const { id, version, build, utsversion, pcyear, defaultos, osversion, lang, launchmode, trayena, isdeb, wifiena } = req.body;
 
     console.log('ID:', id);
     console.log('Version:', version);
     console.log('Build:', build);
     console.log('UTS Version:', utsversion);
     console.log('PC Year:', pcyear);
+    console.log('Default OS:', defaultos);
+    console.log('OS Version:', osversion);
     console.log('Lang:', lang);
     console.log('Launch Mode:', launchmode);
     console.log('Tray Enabled:', trayena);
     console.log('Debug version:', isdeb);
     console.log('Wifi Sync Enabled:', wifiena);
 
-    await updateID(id, version, build, utsversion, pcyear, lang, launchmode, trayena, isdeb, wifiena);
+    await updateID(id, version, build, utsversion, pcyear, defaultos, osversion, lang, launchmode, trayena, isdeb, wifiena);
     await formatJSONFile('data\\id.json', 'data\\id.formatted.json');
 
     console.log('Done !');
@@ -279,6 +285,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
   let totalwifienaCount = 0;
   let totallaunchnCount = 0;
   let totallaunchtCount = 0;
+  let totaldefaultosCount = 0;
 
   let activeidCount = 0;
   let activeisdebCount = 0;
@@ -286,6 +293,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
   let activewifienaCount = 0;
   let activelaunchnCount = 0;
   let activelaunchtCount = 0;
+  let activedefaultosCount = 0;
 
   let outdatedidCount = 0;
   let outdatedisdebCount = 0;
@@ -293,12 +301,14 @@ app.get('/ut-stats/get-stats', async (req, res) => {
   let outdatedwifienaCount = 0;
   let outdatedlaunchnCount = 0;
   let outdatedlaunchtCount = 0;
+  let outdateddefaultosCount = 0;
 
   for (const id in jsonData) {
     if (!ignoredJsonData[id]) {
       if (jsonData[id].isdeb) totalisdebCount++;
       if (jsonData[id].trayena) totaltrayenaCount++;
       if (jsonData[id].wifiena) totalwifienaCount++;
+      if (jsonData[id].defaultos) totaldefaultosCount++;
       totallaunchnCount += jsonData[id].launch.normal;
       totallaunchtCount += jsonData[id].launch.tray;
     }
@@ -312,6 +322,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
         if (jsonData[id].isdeb) activeisdebCount++;
         if (jsonData[id].trayena) activetrayenaCount++;
         if (jsonData[id].wifiena) activewifienaCount++;
+        if (jsonData[id].defaultos) activedefaultosCount++;
         activelaunchnCount += jsonData[id].launch.normal;
         activelaunchtCount += jsonData[id].launch.tray;
       }
@@ -326,6 +337,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
         if (jsonData[id].isdeb) outdatedisdebCount++;
         if (jsonData[id].trayena) outdatedtrayenaCount++;
         if (jsonData[id].wifiena) outdatedwifienaCount++;
+        if (jsonData[id].defaultos) outdateddefaultosCount++;
         outdatedlaunchnCount += jsonData[id].launch.normal;
         outdatedlaunchtCount += jsonData[id].launch.tray;
       }
@@ -338,6 +350,8 @@ app.get('/ut-stats/get-stats', async (req, res) => {
     buildcount: {},
     utsversioncount: {},
     pcyearcount: {},
+    defaultoscount: totaldefaultosCount,
+    osversioncount: {},
     langcount: {},
     isdebcount: totalisdebCount,
     trayenacount: totaltrayenaCount,
@@ -354,6 +368,8 @@ app.get('/ut-stats/get-stats', async (req, res) => {
     buildcount: {},
     utsversioncount: {},
     pcyearcount: {},
+    defaultoscount: activedefaultosCount,
+    osversioncount: {},
     langcount: {},
     isdebcount: activeisdebCount,
     trayenacount: activetrayenaCount,
@@ -370,6 +386,8 @@ app.get('/ut-stats/get-stats', async (req, res) => {
     buildcount: {},
     utsversioncount: {},
     pcyearcount: {},
+    defaultoscount: outdateddefaultosCount,
+    osversioncount: {},
     langcount: {},
     isdebcount: outdatedisdebCount,
     trayenacount: outdatedtrayenaCount,
@@ -418,6 +436,13 @@ app.get('/ut-stats/get-stats', async (req, res) => {
       } else {
         totalconst.pcyearcount[pcyear] = 1;
       }
+
+      const osversion = jsonData[id].osversion;
+      if (totalconst.osversioncount[osversion]) {
+        totalconst.osversioncount[osversion]++;
+      } else {
+        totalconst.osversioncount[osversion] = 1;
+      }
     }
   }
 
@@ -460,6 +485,13 @@ app.get('/ut-stats/get-stats', async (req, res) => {
           activeconst.pcyearcount[pcyear]++;
         } else {
           activeconst.pcyearcount[pcyear] = 1;
+        }
+
+        const osversion = jsonData[id].osversion;
+        if (activeconst.osversioncount[osversion]) {
+          activeconst.osversioncount[osversion]++;
+        } else {
+          activeconst.osversioncount[osversion] = 1;
         }
       }
     }
@@ -504,6 +536,13 @@ app.get('/ut-stats/get-stats', async (req, res) => {
           outdatedconst.pcyearcount[pcyear]++;
         } else {
           outdatedconst.pcyearcount[pcyear] = 1;
+        }
+
+        const osversion = jsonData[id].osversion;
+        if (outdatedconst.osversioncount[osversion]) {
+          outdatedconst.osversioncount[osversion]++;
+        } else {
+          outdatedconst.osversioncount[osversion] = 1;
         }
       }
     }
