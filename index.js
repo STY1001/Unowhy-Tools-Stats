@@ -7,6 +7,28 @@ const moment = require('moment');
 app.use(express.json());
 app.use(express.text({limit: '10mb'}));
 
+if (!fs.existsSync('data')) {
+  fs.mkdir('data');
+}
+if (!fs.existsSync('data\\crash')) {
+  fs.mkdir('data\\crash');
+}
+if (!fs.existsSync('data\\ignoredid.json')) {
+  fs.writeFile('data\\ignoredid.json', '{}', 'utf8');
+}
+if (!fs.existsSync('data\\id.json')) {
+  fs.writeFile('data\\id.json', '{}', 'utf8');
+}
+if (!fs.existsSync('data\\usage.json')) {
+  fs.writeFile('data\\usage.json', '{}', 'utf8');
+}
+if (!fs.existsSync('data\\crash.json')) {
+  fs.writeFile('data\\crash.json', '{}', 'utf8');
+}
+if (!fs.existsSync('data\\check.json')) {
+  fs.writeFile('data\\check.json', '{}', 'utf8');
+}
+
 /**
  * Function to format a JSON file
  * @param {string} inputFile - The path of the input JSON file
@@ -39,7 +61,7 @@ async function formatJSONFile(inputFile, outputFile) {
  * @param {boolean} isdeb - The debug version status
  * @param {boolean} wifiena - The WiFi sync enabled status
  */
-async function updateID(id, version, build, utsversion, pcyear, defaultos, osversion, lang, launchmode, trayena, isdeb, wifiena) {
+async function updateID(id, version, build, utsversion, pcyear, weirdpc, defaultos, osversion, lang, launchmode, trayena, isdeb, wifiena) {
   try {
     const data = await fs.readFile('data\\id.json', 'utf8');
     let jsonData = JSON.parse(data);
@@ -59,6 +81,7 @@ async function updateID(id, version, build, utsversion, pcyear, defaultos, osver
       build,
       utsversion,
       pcyear,
+      weirdpc,
       defaultos,
       osversion,
       lang,
@@ -146,6 +169,32 @@ async function updateCrash(id, version, build, utsversion, isdeb, crashid, messa
   }
 }
 
+/**
+ * Function to update check JSON data based on specific parameters
+ * @param {string} id - The identifier
+ * @param {string} check - The check
+ */
+async function updateCheck(id, check) {
+  try {
+    const data = await fs.readFile('data\\check.json', 'utf8');
+    let jsonData = JSON.parse(data);
+
+    if (jsonData.hasOwnProperty(id)) {
+      console.log('\nID already exists, updating data');
+    } else {
+      console.log('\nID does not already exist, creating data');
+    }
+
+    jsonData[id] = check;
+
+    await fs.writeFile('data\\check.json', JSON.stringify(jsonData), 'utf8');
+
+    console.log('Data updated');
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 app.post('/ut-stats', async (req, res) => {
   try {
     const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
@@ -156,13 +205,14 @@ app.post('/ut-stats', async (req, res) => {
     console.log(jsonDataPost);
     console.log('JSON End\n');
 
-    const { id, version, build, utsversion, pcyear, defaultos, osversion, lang, launchmode, trayena, isdeb, wifiena } = req.body;
+    const { id, version, build, utsversion, pcyear, weirdpc, defaultos, osversion, lang, launchmode, trayena, isdeb, wifiena } = req.body;
 
     console.log('ID:', id);
     console.log('Version:', version);
     console.log('Build:', build);
     console.log('UTS Version:', utsversion);
     console.log('PC Year:', pcyear);
+    console.log('Weird PC:', weirdpc);
     console.log('Default OS:', defaultos);
     console.log('OS Version:', osversion);
     console.log('Lang:', lang);
@@ -171,7 +221,7 @@ app.post('/ut-stats', async (req, res) => {
     console.log('Debug version:', isdeb);
     console.log('Wifi Sync Enabled:', wifiena);
 
-    await updateID(id, version, build, utsversion, pcyear, defaultos, osversion, lang, launchmode, trayena, isdeb, wifiena);
+    await updateID(id, version, build, utsversion, pcyear, weirdpc, defaultos, osversion, lang, launchmode, trayena, isdeb, wifiena);
     await formatJSONFile('data\\id.json', 'data\\id.formatted.json');
 
     console.log('Done !');
@@ -257,6 +307,33 @@ app.post('/ut-stats/crash/logs', async (req, res) => {
   }
 });
 
+app.post('/ut-stats/check', async (req, res) => {
+  try{
+    const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
+    console.log(`\n\n\n[${currentTime}] New HTTP POST request (/ut-stats/check):\nJSON:`);
+
+    const jsonDataPost = JSON.stringify(req.body, null, 2);
+
+    console.log(jsonDataPost);
+    console.log('JSON End\n');
+
+    const { id, check } = req.body;
+
+    console.log('ID:', id);
+    console.log('Check:', check);
+    
+    await updateCheck(id, check);
+    await formatJSONFile('data\\check.json', 'data\\check.formatted.json');
+
+    console.log('Done !');
+    res.send('OK');
+  }
+  catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
 app.get('/ut-stats', async (req, res) => {
   const repconst = {
     Name: 'Unowhy Tools Stats',
@@ -286,6 +363,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
   let totallaunchnCount = 0;
   let totallaunchtCount = 0;
   let totaldefaultosCount = 0;
+  let totalweirdpcCount = 0;
 
   let activeidCount = 0;
   let activeisdebCount = 0;
@@ -294,6 +372,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
   let activelaunchnCount = 0;
   let activelaunchtCount = 0;
   let activedefaultosCount = 0;
+  let activeweirdpcCount = 0;
 
   let outdatedidCount = 0;
   let outdatedisdebCount = 0;
@@ -302,6 +381,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
   let outdatedlaunchnCount = 0;
   let outdatedlaunchtCount = 0;
   let outdateddefaultosCount = 0;
+  let outdatedweirdpcCount = 0;
 
   for (const id in jsonData) {
     if (!ignoredJsonData[id]) {
@@ -309,6 +389,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
       if (jsonData[id].trayena) totaltrayenaCount++;
       if (jsonData[id].wifiena) totalwifienaCount++;
       if (jsonData[id].defaultos) totaldefaultosCount++;
+      if (jsonData[id].weirdpc) totalweirdpcCount++;
       totallaunchnCount += jsonData[id].launch.normal;
       totallaunchtCount += jsonData[id].launch.tray;
     }
@@ -323,6 +404,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
         if (jsonData[id].trayena) activetrayenaCount++;
         if (jsonData[id].wifiena) activewifienaCount++;
         if (jsonData[id].defaultos) activedefaultosCount++;
+        if (jsonData[id].weirdpc) activeweirdpcCount++;
         activelaunchnCount += jsonData[id].launch.normal;
         activelaunchtCount += jsonData[id].launch.tray;
       }
@@ -338,6 +420,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
         if (jsonData[id].trayena) outdatedtrayenaCount++;
         if (jsonData[id].wifiena) outdatedwifienaCount++;
         if (jsonData[id].defaultos) outdateddefaultosCount++;
+        if (jsonData[id].weirdpc) outdatedweirdpcCount++;
         outdatedlaunchnCount += jsonData[id].launch.normal;
         outdatedlaunchtCount += jsonData[id].launch.tray;
       }
@@ -350,6 +433,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
     buildcount: {},
     utsversioncount: {},
     pcyearcount: {},
+    weirdpccount: totalweirdpcCount,
     defaultoscount: totaldefaultosCount,
     osversioncount: {},
     langcount: {},
@@ -368,6 +452,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
     buildcount: {},
     utsversioncount: {},
     pcyearcount: {},
+    weirdpccount: activeweirdpcCount,
     defaultoscount: activedefaultosCount,
     osversioncount: {},
     langcount: {},
@@ -386,6 +471,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
     buildcount: {},
     utsversioncount: {},
     pcyearcount: {},
+    weirdpccount: outdatedweirdpcCount,
     defaultoscount: outdateddefaultosCount,
     osversioncount: {},
     langcount: {},
