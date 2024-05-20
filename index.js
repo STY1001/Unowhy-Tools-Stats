@@ -1,6 +1,6 @@
 const express = require('express');
 const app = express();
-const fs = require('fs').promises;
+const fs = require('fs');
 const prettier = require('prettier');
 const moment = require('moment');
 
@@ -8,25 +8,25 @@ app.use(express.json());
 app.use(express.text({limit: '10mb'}));
 
 if (!fs.existsSync('data')) {
-  fs.mkdir('data');
+  fs.mkdirSync('data');
 }
 if (!fs.existsSync('data\\crash')) {
-  fs.mkdir('data\\crash');
+  fs.mkdirSync('data\\crash');
 }
 if (!fs.existsSync('data\\ignoredid.json')) {
-  fs.writeFile('data\\ignoredid.json', '{}', 'utf8');
+  fs.writeFileSync('data\\ignoredid.json', JSON.stringify({}), 'utf8');
 }
 if (!fs.existsSync('data\\id.json')) {
-  fs.writeFile('data\\id.json', '{}', 'utf8');
+  fs.writeFileSync('data\\id.json', JSON.stringify({}), 'utf8');
 }
 if (!fs.existsSync('data\\usage.json')) {
-  fs.writeFile('data\\usage.json', '{}', 'utf8');
+  fs.writeFileSync('data\\usage.json', JSON.stringify({}), 'utf8');
 }
 if (!fs.existsSync('data\\crash.json')) {
-  fs.writeFile('data\\crash.json', '{}', 'utf8');
+  fs.writeFileSync('data\\crash.json', JSON.stringify({}), 'utf8');
 }
 if (!fs.existsSync('data\\check.json')) {
-  fs.writeFile('data\\check.json', '{}', 'utf8');
+  fs.writeFileSync('data\\check.json', JSON.stringify({}), 'utf8');
 }
 
 /**
