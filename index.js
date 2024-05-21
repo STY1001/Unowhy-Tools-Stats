@@ -1,32 +1,38 @@
 const express = require('express');
 const app = express();
-const fs = require('fs');
+const fsall = require('fs');
+const fs = require('fs').promises;
 const prettier = require('prettier');
 const moment = require('moment');
 
 app.use(express.json());
 app.use(express.text({limit: '10mb'}));
-
-if (!fs.existsSync('data')) {
-  fs.mkdirSync('data');
+try{
+  if (!fsall.existsSync('data')) {
+    fsall.mkdirSync('data');
+  }
+  if (!fsall.existsSync('data\\crash')) {
+    fsall.mkdirSync('data\\crash');
+  }
+  if (!fsall.existsSync('data\\ignoredid.json')) {
+    fsall.writeFileSync('data\\ignoredid.json', JSON.stringify({}), 'utf8');
+  }
+  if (!fsall.existsSync('data\\id.json')) {
+    fsall.writeFileSync('data\\id.json', JSON.stringify({}), 'utf8');
+  }
+  if (!fsall.existsSync('data\\usage.json')) {
+    fsall.writeFileSync('data\\usage.json', JSON.stringify({}), 'utf8');
+  }
+  if (!fsall.existsSync('data\\crash.json')) {
+    fsall.writeFileSync('data\\crash.json', JSON.stringify({}), 'utf8');
+  }
+  if (!fsall.existsSync('data\\check.json')) {
+    fsall.writeFileSync('data\\check.json', JSON.stringify({}), 'utf8');
+  }
 }
-if (!fs.existsSync('data\\crash')) {
-  fs.mkdirSync('data\\crash');
-}
-if (!fs.existsSync('data\\ignoredid.json')) {
-  fs.writeFileSync('data\\ignoredid.json', JSON.stringify({}), 'utf8');
-}
-if (!fs.existsSync('data\\id.json')) {
-  fs.writeFileSync('data\\id.json', JSON.stringify({}), 'utf8');
-}
-if (!fs.existsSync('data\\usage.json')) {
-  fs.writeFileSync('data\\usage.json', JSON.stringify({}), 'utf8');
-}
-if (!fs.existsSync('data\\crash.json')) {
-  fs.writeFileSync('data\\crash.json', JSON.stringify({}), 'utf8');
-}
-if (!fs.existsSync('data\\check.json')) {
-  fs.writeFileSync('data\\check.json', JSON.stringify({}), 'utf8');
+catch (error) {
+  console.error(error);
+  process.exit(1);
 }
 
 /**
