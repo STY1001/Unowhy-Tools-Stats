@@ -8,7 +8,7 @@ Collected data:
 - Version
 - Build
 - UTS Version
-- PC Year
+- PC Model
 - Selected lang
 - Start mode (normal/tray)
 - If tray is enabled
