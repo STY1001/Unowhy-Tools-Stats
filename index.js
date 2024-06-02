@@ -58,7 +58,9 @@ async function formatJSONFile(inputFile, outputFile) {
  * @param {string} version - The version
  * @param {string} build - The build
  * @param {string} utsversion - The UTS version
+ * @param {string} pcmodel - The PC model
  * @param {string} pcyear - The PC year
+ * @param {boolean} weirdpc - The weird PC status
  * @param {string} defaultos - The default OS status
  * @param {string} osversion - The OS version
  * @param {string} lang - The language
@@ -67,7 +69,7 @@ async function formatJSONFile(inputFile, outputFile) {
  * @param {boolean} isdeb - The debug version status
  * @param {boolean} wifiena - The WiFi sync enabled status
  */
-async function updateID(id, version, build, utsversion, pcyear, weirdpc, defaultos, osversion, lang, launchmode, trayena, isdeb, wifiena) {
+async function updateID(id, version, build, utsversion, pcmodel, pcyear, weirdpc, defaultos, osversion, lang, launchmode, trayena, isdeb, wifiena) {
   try {
     const data = await fs.readFile('data\\id.json', 'utf8');
     let jsonData = JSON.parse(data);
@@ -86,6 +88,7 @@ async function updateID(id, version, build, utsversion, pcyear, weirdpc, default
       version,
       build,
       utsversion,
+      pcmodel,
       pcyear,
       weirdpc,
       defaultos,
@@ -211,12 +214,13 @@ app.post('/ut-stats', async (req, res) => {
     console.log(jsonDataPost);
     console.log('JSON End\n');
 
-    const { id, version, build, utsversion, pcyear, weirdpc, defaultos, osversion, lang, launchmode, trayena, isdeb, wifiena } = req.body;
+    const { id, version, build, utsversion, pcmodel, pcyear, weirdpc, defaultos, osversion, lang, launchmode, trayena, isdeb, wifiena } = req.body;
 
     console.log('ID:', id);
     console.log('Version:', version);
     console.log('Build:', build);
     console.log('UTS Version:', utsversion);
+    console.log('PC Model:', pcmodel);
     console.log('PC Year:', pcyear);
     console.log('Weird PC:', weirdpc);
     console.log('Default OS:', defaultos);
@@ -227,7 +231,7 @@ app.post('/ut-stats', async (req, res) => {
     console.log('Debug version:', isdeb);
     console.log('Wifi Sync Enabled:', wifiena);
 
-    await updateID(id, version, build, utsversion, pcyear, weirdpc, defaultos, osversion, lang, launchmode, trayena, isdeb, wifiena);
+    await updateID(id, version, build, utsversion, pcmodel, pcyear, weirdpc, defaultos, osversion, lang, launchmode, trayena, isdeb, wifiena);
     await formatJSONFile('data\\id.json', 'data\\id.formatted.json');
 
     console.log('Done !');
@@ -438,6 +442,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
     versioncount: {},
     buildcount: {},
     utsversioncount: {},
+    pcmodelCount: {},
     pcyearcount: {},
     weirdpccount: totalweirdpcCount,
     defaultoscount: totaldefaultosCount,
@@ -457,6 +462,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
     versioncount: {},
     buildcount: {},
     utsversioncount: {},
+    pcmodelCount: {},
     pcyearcount: {},
     weirdpccount: activeweirdpcCount,
     defaultoscount: activedefaultosCount,
@@ -476,6 +482,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
     versioncount: {},
     buildcount: {},
     utsversioncount: {},
+    pcmodelCount: {},
     pcyearcount: {},
     weirdpccount: outdatedweirdpcCount,
     defaultoscount: outdateddefaultosCount,
@@ -520,6 +527,13 @@ app.get('/ut-stats/get-stats', async (req, res) => {
         totalconst.utsversioncount[utsversion]++;
       } else {
         totalconst.utsversioncount[utsversion] = 1;
+      }
+
+      const pcmodel = jsonData[id].pcmodel;
+      if (totalconst.pcmodelCount[pcmodel]) {
+        totalconst.pcmodelCount[pcmodel]++;
+      } else {
+        totalconst.pcmodelCount[pcmodel] = 1;
       }
 
       const pcyear = jsonData[id].pcyear;
@@ -572,6 +586,14 @@ app.get('/ut-stats/get-stats', async (req, res) => {
           activeconst.utsversioncount[utsversion] = 1;
         }
 
+        const pcmodel = jsonData[id].pcmodel;
+        if (activeconst.pcmodelCount[pcmodel]) {
+          activeconst.pcmodelCount[pcmodel]++;
+        }
+        else {
+          activeconst.pcmodelCount[pcmodel] = 1;
+        }
+
         const pcyear = jsonData[id].pcyear;
         if (activeconst.pcyearcount[pcyear]) {
           activeconst.pcyearcount[pcyear]++;
@@ -621,6 +643,13 @@ app.get('/ut-stats/get-stats', async (req, res) => {
           outdatedconst.utsversioncount[utsversion]++;
         } else {
           outdatedconst.utsversioncount[utsversion] = 1;
+        }
+
+        const pcmodel = jsonData[id].pcmodel;
+        if (outdatedconst.pcmodelCount[pcmodel]) {
+          outdatedconst.pcmodelCount[pcmodel]++;
+        } else {
+          outdatedconst.pcmodelCount[pcmodel] = 1;
         }
 
         const pcyear = jsonData[id].pcyear;
@@ -681,6 +710,8 @@ app.get('/ut-stats/get-stats/usage', async (req, res) => {
   res.setHeader('Content-Type', 'application/json');
   res.send(repconstString);
 });
+
+
 
 app.listen(3000, () => {
   console.log('Server started, port 3000');
