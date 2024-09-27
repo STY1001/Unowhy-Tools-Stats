@@ -6,8 +6,8 @@ const prettier = require('prettier');
 const moment = require('moment');
 
 app.use(express.json());
-app.use(express.text({limit: '10mb'}));
-try{
+app.use(express.text({ limit: '10mb' }));
+try {
   if (!fsall.existsSync('data')) {
     fsall.mkdirSync('data');
   }
@@ -308,7 +308,7 @@ app.post('/ut-stats/crash/logs', async (req, res) => {
     console.log(`Crash ID: ${crashid}`);
 
     await fs.writeFile(`data\\crash\\${crashid}.log`, logstext, 'utf8');
-    
+
     console.log('Done !');
     res.send('OK');
   } catch (error) {
@@ -318,7 +318,7 @@ app.post('/ut-stats/crash/logs', async (req, res) => {
 });
 
 app.post('/ut-stats/check', async (req, res) => {
-  try{
+  try {
     const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
     console.log(`\n\n\n[${currentTime}] New HTTP POST request (/ut-stats/check):\nJSON:`);
 
@@ -331,7 +331,7 @@ app.post('/ut-stats/check', async (req, res) => {
 
     console.log('ID:', id);
     console.log('Check:', check);
-    
+
     await updateCheck(id, check);
     await formatJSONFile('data\\check.json', 'data\\check.formatted.json');
 
@@ -345,6 +345,9 @@ app.post('/ut-stats/check', async (req, res) => {
 });
 
 app.get('/ut-stats', async (req, res) => {
+  const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
+  console.log(`\n\n\n[${currentTime}] New HTTP GET request (/ut-stats)\n`);
+
   const repconst = {
     Name: 'Unowhy Tools Stats',
     Author: 'STY1001',
@@ -358,6 +361,9 @@ app.get('/ut-stats', async (req, res) => {
 });
 
 app.get('/ut-stats/get-stats', async (req, res) => {
+  const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
+  console.log(`\n\n\n[${currentTime}] New HTTP GET request (/ut-stats/get-stats)\n`);
+
   let data = await fs.readFile('data\\id.json', 'utf8');
   const jsonData = JSON.parse(data);
 
@@ -682,6 +688,9 @@ app.get('/ut-stats/get-stats', async (req, res) => {
 });
 
 app.get('/ut-stats/get-stats/usage', async (req, res) => {
+  const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
+  console.log(`\n\n\n[${currentTime}] New HTTP GET request (/ut-stats/get-stats/usage)\n`);
+
   let data = await fs.readFile('data\\usage.json', 'utf8');
   const jsonData = JSON.parse(data);
 
@@ -711,7 +720,41 @@ app.get('/ut-stats/get-stats/usage', async (req, res) => {
   res.send(repconstString);
 });
 
+app.get('/ut-stats/get-stats/check', async (req, res) => {
+  const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
+  console.log(`\n\n\n[${currentTime}] New HTTP GET request (/ut-stats/get-stats/check)\n`);
 
+  let data = await fs.readFile('data\\check.json', 'utf8');
+  const jsonData = JSON.parse(data);
+
+  let checkcount = {};
+
+  for (const id in jsonData) {
+    for (const check in jsonData[id]) {
+      if (checkcount[check]) {
+        if (jsonData[id][check] == true) {
+          checkcount[check]++;
+        }
+      } else {
+        if (jsonData[id][check] == true) {
+          checkcount[check] = 1;
+        }
+        else {
+          checkcount[check] = 0;
+        }
+      }
+    }
+  }
+
+  const repconst = {
+    checkcount
+  }
+
+  const repconstString = JSON.stringify(repconst, null, 2);
+
+  res.setHeader('Content-Type', 'application/json');
+  res.send(repconstString);
+});
 
 app.listen(3000, () => {
   console.log('Server started, port 3000');
