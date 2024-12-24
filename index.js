@@ -448,7 +448,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
     versioncount: {},
     buildcount: {},
     utsversioncount: {},
-    pcmodelCount: {},
+    pcmodelcount: {},
     pcyearcount: {},
     weirdpccount: totalweirdpcCount,
     defaultoscount: totaldefaultosCount,
@@ -468,7 +468,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
     versioncount: {},
     buildcount: {},
     utsversioncount: {},
-    pcmodelCount: {},
+    pcmodelcount: {},
     pcyearcount: {},
     weirdpccount: activeweirdpcCount,
     defaultoscount: activedefaultosCount,
@@ -488,7 +488,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
     versioncount: {},
     buildcount: {},
     utsversioncount: {},
-    pcmodelCount: {},
+    pcmodelcount: {},
     pcyearcount: {},
     weirdpccount: outdatedweirdpcCount,
     defaultoscount: outdateddefaultosCount,
@@ -536,10 +536,10 @@ app.get('/ut-stats/get-stats', async (req, res) => {
       }
 
       const pcmodel = jsonData[id].pcmodel;
-      if (totalconst.pcmodelCount[pcmodel]) {
-        totalconst.pcmodelCount[pcmodel]++;
+      if (totalconst.pcmodelcount[pcmodel]) {
+        totalconst.pcmodelcount[pcmodel]++;
       } else {
-        totalconst.pcmodelCount[pcmodel] = 1;
+        totalconst.pcmodelcount[pcmodel] = 1;
       }
 
       const pcyear = jsonData[id].pcyear;
@@ -593,11 +593,11 @@ app.get('/ut-stats/get-stats', async (req, res) => {
         }
 
         const pcmodel = jsonData[id].pcmodel;
-        if (activeconst.pcmodelCount[pcmodel]) {
-          activeconst.pcmodelCount[pcmodel]++;
+        if (activeconst.pcmodelcount[pcmodel]) {
+          activeconst.pcmodelcount[pcmodel]++;
         }
         else {
-          activeconst.pcmodelCount[pcmodel] = 1;
+          activeconst.pcmodelcount[pcmodel] = 1;
         }
 
         const pcyear = jsonData[id].pcyear;
@@ -652,10 +652,10 @@ app.get('/ut-stats/get-stats', async (req, res) => {
         }
 
         const pcmodel = jsonData[id].pcmodel;
-        if (outdatedconst.pcmodelCount[pcmodel]) {
-          outdatedconst.pcmodelCount[pcmodel]++;
+        if (outdatedconst.pcmodelcount[pcmodel]) {
+          outdatedconst.pcmodelcount[pcmodel]++;
         } else {
-          outdatedconst.pcmodelCount[pcmodel] = 1;
+          outdatedconst.pcmodelcount[pcmodel] = 1;
         }
 
         const pcyear = jsonData[id].pcyear;
