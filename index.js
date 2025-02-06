@@ -5,11 +5,16 @@ const fs = require('fs').promises;
 const prettier = require('prettier');
 const moment = require('moment');
 
+const port = 3000;
+
 app.use(express.json());
 app.use(express.text({ limit: '10mb' }));
 try {
   if (!fsall.existsSync('data')) {
     fsall.mkdirSync('data');
+  }
+  if (!fsall.existsSync('logs')) {
+    fsall.mkdirSync('logs');
   }
   if (!fsall.existsSync('data\\crash')) {
     fsall.mkdirSync('data\\crash');
@@ -774,6 +779,6 @@ app.get('/ut-stats/get-stats/check', async (req, res) => {
   res.send(repconstString);
 });
 
-app.listen(3000, () => {
-  write2log('Server started, port 3000');
+app.listen(port, () => {
+  write2log(`UT Stats server\nby STY1001\nStarted on port ${port}\n\n`);
 });
