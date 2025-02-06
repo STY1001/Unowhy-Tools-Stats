@@ -31,8 +31,26 @@ try {
   }
 }
 catch (error) {
-  console.error(error);
+  write2error(error);
   process.exit(1);
+}
+
+/**
+ * Function to log to a file and to the console
+ * @param {string} log - The log to write
+ */
+function write2log(log) {
+  console.log(`${log}`);
+  fsall.appendFileSync('logs\\logs.log', `${log}\n`);
+}
+
+/**
+ * Function to log error to a file and to the console
+ * @param {string} error - The error to write
+ */
+function write2error(error) {
+  console.error(`${error}`);
+  fsall.appendFileSync('logs\\errors.log', `${error}\n`);
 }
 
 /**
@@ -46,9 +64,9 @@ async function formatJSONFile(inputFile, outputFile) {
     const jsonData = JSON.parse(data);
     const formattedData = prettier.format(JSON.stringify(jsonData), { parser: 'json' });
     await fs.writeFile(outputFile, formattedData, 'utf8');
-    console.log('JSON file formatted');
+    write2log('JSON file formatted');
   } catch (error) {
-    console.error(error);
+    write2error(error);
   }
 }
 
@@ -75,9 +93,9 @@ async function updateID(id, version, build, utsversion, pcmodel, pcyear, weirdpc
     let jsonData = JSON.parse(data);
 
     if (jsonData.hasOwnProperty(id)) {
-      console.log('\nID already exists, updating data');
+      write2log('\nID already exists, updating data');
     } else {
-      console.log('\nID does not already exist, creating data');
+      write2log('\nID does not already exist, creating data');
     }
 
     jsonData[id] = {
@@ -102,9 +120,9 @@ async function updateID(id, version, build, utsversion, pcmodel, pcyear, weirdpc
 
     await fs.writeFile('data\\id.json', JSON.stringify(jsonData), 'utf8');
 
-    console.log('Data updated');
+    write2log('Data updated');
   } catch (error) {
-    console.error(error);
+    write2error(error);
   }
 }
 
@@ -119,9 +137,9 @@ async function updateUsage(id, action) {
     let jsonData = JSON.parse(data);
 
     if (jsonData.hasOwnProperty(id)) {
-      console.log('\nID already exists, updating data');
+      write2log('\nID already exists, updating data');
     } else {
-      console.log('\nID does not already exist, creating data');
+      write2log('\nID does not already exist, creating data');
     }
 
     if (jsonData[id]) {
@@ -134,9 +152,9 @@ async function updateUsage(id, action) {
 
     await fs.writeFile('data\\usage.json', JSON.stringify(jsonData), 'utf8');
 
-    console.log('Data updated');
+    write2log('Data updated');
   } catch (error) {
-    console.error(error);
+    write2error(error);
   }
 }
 
@@ -155,9 +173,9 @@ async function updateCrash(id, version, build, utsversion, isdeb, crashid, messa
     let jsonData = JSON.parse(data);
 
     if (jsonData.hasOwnProperty(id)) {
-      console.log('\nID already exists, updating data');
+      write2log('\nID already exists, updating data');
     } else {
-      console.log('\nID does not already exist, creating data');
+      write2log('\nID does not already exist, creating data');
     };
 
     jsonData[id] = jsonData[id] || {};
@@ -172,9 +190,9 @@ async function updateCrash(id, version, build, utsversion, isdeb, crashid, messa
 
     await fs.writeFile('data\\crash.json', JSON.stringify(jsonData), 'utf8');
 
-    console.log('Data added');
+    write2log('Data added');
   } catch (error) {
-    console.error(error);
+    write2error(error);
   }
 }
 
@@ -189,55 +207,55 @@ async function updateCheck(id, check) {
     let jsonData = JSON.parse(data);
 
     if (jsonData.hasOwnProperty(id)) {
-      console.log('\nID already exists, updating data');
+      write2log('\nID already exists, updating data');
     } else {
-      console.log('\nID does not already exist, creating data');
+      write2log('\nID does not already exist, creating data');
     }
 
     jsonData[id] = check;
 
     await fs.writeFile('data\\check.json', JSON.stringify(jsonData), 'utf8');
 
-    console.log('Data updated');
+    write2log('Data updated');
   } catch (error) {
-    console.error(error);
+    write2error(error);
   }
 }
 
 app.post('/ut-stats', async (req, res) => {
   try {
     const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
-    console.log(`\n\n\n[${currentTime}] New HTTP POST request (/ut-stats):\nJSON:`);
+    write2log(`\n\n\n[${currentTime}] New HTTP POST request (/ut-stats):\nJSON:`);
 
     const jsonDataPost = JSON.stringify(req.body, null, 2);
 
-    console.log(jsonDataPost);
-    console.log('JSON End\n');
+    write2log(jsonDataPost);
+    write2log('JSON End\n');
 
     const { id, version, build, utsversion, pcmodel, pcyear, weirdpc, defaultos, osversion, lang, launchmode, trayena, isdeb, wifiena } = req.body;
 
-    console.log('ID:', id);
-    console.log('Version:', version);
-    console.log('Build:', build);
-    console.log('UTS Version:', utsversion);
-    console.log('PC Model:', pcmodel);
-    console.log('PC Year:', pcyear);
-    console.log('Weird PC:', weirdpc);
-    console.log('Default OS:', defaultos);
-    console.log('OS Version:', osversion);
-    console.log('Lang:', lang);
-    console.log('Launch Mode:', launchmode);
-    console.log('Tray Enabled:', trayena);
-    console.log('Debug version:', isdeb);
-    console.log('Wifi Sync Enabled:', wifiena);
+    write2log('ID:', id);
+    write2log('Version:', version);
+    write2log('Build:', build);
+    write2log('UTS Version:', utsversion);
+    write2log('PC Model:', pcmodel);
+    write2log('PC Year:', pcyear);
+    write2log('Weird PC:', weirdpc);
+    write2log('Default OS:', defaultos);
+    write2log('OS Version:', osversion);
+    write2log('Lang:', lang);
+    write2log('Launch Mode:', launchmode);
+    write2log('Tray Enabled:', trayena);
+    write2log('Debug version:', isdeb);
+    write2log('Wifi Sync Enabled:', wifiena);
 
     await updateID(id, version, build, utsversion, pcmodel, pcyear, weirdpc, defaultos, osversion, lang, launchmode, trayena, isdeb, wifiena);
     await formatJSONFile('data\\id.json', 'data\\id.formatted.json');
 
-    console.log('Done !');
+    write2log('Done !');
     res.send('OK');
   } catch (error) {
-    console.error(error);
+    write2error(error);
     res.status(500).send('Internal Server Error');
   }
 });
@@ -245,25 +263,25 @@ app.post('/ut-stats', async (req, res) => {
 app.post('/ut-stats/usage', async (req, res) => {
   try {
     const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
-    console.log(`\n\n\n[${currentTime}] New HTTP POST request (/ut-stats/usage):\nJSON:`);
+    write2log(`\n\n\n[${currentTime}] New HTTP POST request (/ut-stats/usage):\nJSON:`);
 
     const jsonDataPost = JSON.stringify(req.body, null, 2);
 
-    console.log(jsonDataPost);
-    console.log('JSON End\n');
+    write2log(jsonDataPost);
+    write2log('JSON End\n');
 
     const { id, action } = req.body;
 
-    console.log('ID:', id);
-    console.log('Action:', action);
+    write2log('ID:', id);
+    write2log('Action:', action);
 
     await updateUsage(id, action);
     await formatJSONFile('data\\usage.json', 'data\\usage.formatted.json');
 
-    console.log('Done !');
+    write2log('Done !');
     res.send('OK');
   } catch (error) {
-    console.error(error);
+    write2error(error);
     res.status(500).send('Internal Server Error');
   }
 });
@@ -271,30 +289,30 @@ app.post('/ut-stats/usage', async (req, res) => {
 app.post('/ut-stats/crash', async (req, res) => {
   try {
     const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
-    console.log(`\n\n\n[${currentTime}] New HTTP POST request (/ut-stats/crash):\nJSON:`);
+    write2log(`\n\n\n[${currentTime}] New HTTP POST request (/ut-stats/crash):\nJSON:`);
 
     const jsonDataPost = JSON.stringify(req.body, null, 2);
 
-    console.log(jsonDataPost);
-    console.log('JSON End\n');
+    write2log(jsonDataPost);
+    write2log('JSON End\n');
 
     const { id, version, build, utsversion, isdeb, crashid, message } = req.body;
 
-    console.log('ID:', id);
-    console.log('Version:', version);
-    console.log('Build:', build);
-    console.log('UTS Version:', utsversion);
-    console.log('Debug version:', isdeb);
-    console.log('Crash ID:', crashid);
-    console.log('Message:', message);
+    write2log('ID:', id);
+    write2log('Version:', version);
+    write2log('Build:', build);
+    write2log('UTS Version:', utsversion);
+    write2log('Debug version:', isdeb);
+    write2log('Crash ID:', crashid);
+    write2log('Message:', message);
 
     await updateCrash(id, version, build, utsversion, isdeb, crashid, message);
     await formatJSONFile('data\\crash.json', 'data\\crash.formatted.json');
 
-    console.log('Done !');
+    write2log('Done !');
     res.send('OK');
   } catch (error) {
-    console.error(error);
+    write2error(error);
     res.status(500).send('Internal Server Error');
   }
 });
@@ -304,15 +322,15 @@ app.post('/ut-stats/crash/logs', async (req, res) => {
     const crashid = req.headers['crashid'];
     const logstext = req.body;
     const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
-    console.log(`\n\n\n[${currentTime}] New HTTP POST request (/ut-stats/crash/logs):\n`);
-    console.log(`Crash ID: ${crashid}`);
+    write2log(`\n\n\n[${currentTime}] New HTTP POST request (/ut-stats/crash/logs):\n`);
+    write2log(`Crash ID: ${crashid}`);
 
     await fs.writeFile(`data\\crash\\${crashid}.log`, logstext, 'utf8');
 
-    console.log('Done !');
+    write2log('Done !');
     res.send('OK');
   } catch (error) {
-    console.error(error);
+    write2error(error);
     res.status(500).send('Internal Server Error');
   }
 });
@@ -320,33 +338,33 @@ app.post('/ut-stats/crash/logs', async (req, res) => {
 app.post('/ut-stats/check', async (req, res) => {
   try {
     const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
-    console.log(`\n\n\n[${currentTime}] New HTTP POST request (/ut-stats/check):\nJSON:`);
+    write2log(`\n\n\n[${currentTime}] New HTTP POST request (/ut-stats/check):\nJSON:`);
 
     const jsonDataPost = JSON.stringify(req.body, null, 2);
 
-    console.log(jsonDataPost);
-    console.log('JSON End\n');
+    write2log(jsonDataPost);
+    write2log('JSON End\n');
 
     const { id, check } = req.body;
 
-    console.log('ID:', id);
-    console.log('Check:', check);
+    write2log('ID:', id);
+    write2log('Check:', check);
 
     await updateCheck(id, check);
     await formatJSONFile('data\\check.json', 'data\\check.formatted.json');
 
-    console.log('Done !');
+    write2log('Done !');
     res.send('OK');
   }
   catch (error) {
-    console.error(error);
+    write2error(error);
     res.status(500).send('Internal Server Error');
   }
 });
 
 app.get('/ut-stats', async (req, res) => {
   const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
-  console.log(`\n\n\n[${currentTime}] New HTTP GET request (/ut-stats)\n`);
+  write2log(`\n\n\n[${currentTime}] New HTTP GET request (/ut-stats)\n`);
 
   const repconst = {
     Name: 'Unowhy Tools Stats',
@@ -362,7 +380,7 @@ app.get('/ut-stats', async (req, res) => {
 
 app.get('/ut-stats/get-stats', async (req, res) => {
   const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
-  console.log(`\n\n\n[${currentTime}] New HTTP GET request (/ut-stats/get-stats)\n`);
+  write2log(`\n\n\n[${currentTime}] New HTTP GET request (/ut-stats/get-stats)\n`);
 
   let data = await fs.readFile('data\\id.json', 'utf8');
   const jsonData = JSON.parse(data);
@@ -689,7 +707,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
 
 app.get('/ut-stats/get-stats/usage', async (req, res) => {
   const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
-  console.log(`\n\n\n[${currentTime}] New HTTP GET request (/ut-stats/get-stats/usage)\n`);
+  write2log(`\n\n\n[${currentTime}] New HTTP GET request (/ut-stats/get-stats/usage)\n`);
 
   let data = await fs.readFile('data\\usage.json', 'utf8');
   const jsonData = JSON.parse(data);
@@ -722,7 +740,7 @@ app.get('/ut-stats/get-stats/usage', async (req, res) => {
 
 app.get('/ut-stats/get-stats/check', async (req, res) => {
   const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
-  console.log(`\n\n\n[${currentTime}] New HTTP GET request (/ut-stats/get-stats/check)\n`);
+  write2log(`\n\n\n[${currentTime}] New HTTP GET request (/ut-stats/get-stats/check)\n`);
 
   let data = await fs.readFile('data\\check.json', 'utf8');
   const jsonData = JSON.parse(data);
@@ -757,5 +775,5 @@ app.get('/ut-stats/get-stats/check', async (req, res) => {
 });
 
 app.listen(3000, () => {
-  console.log('Server started, port 3000');
+  write2log('Server started, port 3000');
 });
