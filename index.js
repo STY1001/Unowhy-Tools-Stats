@@ -239,20 +239,7 @@ app.post('/ut-stats', async (req, res) => {
 
     const { id, version, build, utsversion, pcmodel, pcyear, weirdpc, defaultos, osversion, lang, launchmode, trayena, isdeb, wifiena } = req.body;
 
-    write2log('ID:', id);
-    write2log('Version:', version);
-    write2log('Build:', build);
-    write2log('UTS Version:', utsversion);
-    write2log('PC Model:', pcmodel);
-    write2log('PC Year:', pcyear);
-    write2log('Weird PC:', weirdpc);
-    write2log('Default OS:', defaultos);
-    write2log('OS Version:', osversion);
-    write2log('Lang:', lang);
-    write2log('Launch Mode:', launchmode);
-    write2log('Tray Enabled:', trayena);
-    write2log('Debug version:', isdeb);
-    write2log('Wifi Sync Enabled:', wifiena);
+    write2log(`ID: ${id}\nVersion: ${version}\nBuild: ${build}\nUTS Version: ${utsversion}\nPC Model: ${pcmodel}\nPC Year: ${pcyear}\nWeird PC: ${weirdpc}\nDefault OS: ${defaultos}\nOS Version: ${osversion}\nLang: ${lang}\nLaunch Mode: ${launchmode}\nTray Enabled: ${trayena}\nDebug version: ${isdeb}\nWifi Sync Enabled: ${wifiena}`);
 
     await updateID(id, version, build, utsversion, pcmodel, pcyear, weirdpc, defaultos, osversion, lang, launchmode, trayena, isdeb, wifiena);
     await formatJSONFile('data\\id.json', 'data\\id.formatted.json');
@@ -277,8 +264,7 @@ app.post('/ut-stats/usage', async (req, res) => {
 
     const { id, action } = req.body;
 
-    write2log('ID:', id);
-    write2log('Action:', action);
+    write2error(`ID: ${id}\nAction: ${action}`);
 
     await updateUsage(id, action);
     await formatJSONFile('data\\usage.json', 'data\\usage.formatted.json');
@@ -303,13 +289,7 @@ app.post('/ut-stats/crash', async (req, res) => {
 
     const { id, version, build, utsversion, isdeb, crashid, message } = req.body;
 
-    write2log('ID:', id);
-    write2log('Version:', version);
-    write2log('Build:', build);
-    write2log('UTS Version:', utsversion);
-    write2log('Debug version:', isdeb);
-    write2log('Crash ID:', crashid);
-    write2log('Message:', message);
+    write2log(`ID: ${id}\nVersion: ${version}\nBuild: ${build}\nUTS Version: ${utsversion}\nDebug version: ${isdeb}\nCrash ID: ${crashid}\nMessage: ${message}`);
 
     await updateCrash(id, version, build, utsversion, isdeb, crashid, message);
     await formatJSONFile('data\\crash.json', 'data\\crash.formatted.json');
@@ -352,8 +332,7 @@ app.post('/ut-stats/check', async (req, res) => {
 
     const { id, check } = req.body;
 
-    write2log('ID:', id);
-    write2log('Check:', check);
+    write2log(`ID: ${id}\nCheck: ${check}`);
 
     await updateCheck(id, check);
     await formatJSONFile('data\\check.json', 'data\\check.formatted.json');
@@ -392,8 +371,6 @@ app.get('/ut-stats/get-stats', async (req, res) => {
 
   data = await fs.readFile('data\\ignoredid.json', 'utf8');
   const ignoredJsonData = JSON.parse(data);
-
-
 
   let totalidCount = Object.keys(jsonData).length - Object.keys(ignoredJsonData).length;
   let totalisdebCount = 0;
