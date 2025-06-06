@@ -362,7 +362,7 @@ app.get('/ut-stats', async (req, res) => {
   res.send(repconstString);
 });
 
-app.get('/ut-stats/get-stats', async (req, res) => {
+/*app.get('/ut-stats/get-stats', async (req, res) => {
   const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
   write2log(`\n\n\n[${currentTime}] New HTTP GET request (/ut-stats/get-stats)\n`);
 
@@ -685,75 +685,125 @@ app.get('/ut-stats/get-stats', async (req, res) => {
 
   res.setHeader('Content-Type', 'application/json');
   res.send(repconstString);
+}); */
+
+app.get('/ut-stats/get-stats', async (req, res) => {
+  const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
+  write2log(`\n\n\n[${currentTime}] New HTTP GET request (/ut-stats/get-stats)\n`);
+
+  const [rawJson, rawIgnored] = await Promise.all([
+    fs.readFile('data\\id.json', 'utf8'),
+    fs.readFile('data\\ignoredid.json', 'utf8')
+  ]);
+
+  const jsonData = JSON.parse(rawJson);
+  const ignoredJsonData = JSON.parse(rawIgnored);
+
+  const now = moment();
+  const oneMonthAgo = now.clone().subtract(1, 'months');
+
+  const createEmptyStats = () => ({
+    idcount: 0,
+    isdebcount: 0,
+    trayenacount: 0,
+    wifienacount: 0,
+    defaultoscount: 0,
+    weirdpccount: 0,
+    launchcount: { normal: 0, tray: 0 },
+    versioncount: {},
+    buildcount: {},
+    utsversioncount: {},
+    pcmodelcount: {},
+    pcyearcount: {},
+    osversioncount: {},
+    langcount: {}
+  });
+
+  const total = createEmptyStats();
+  const active = createEmptyStats();
+  const outdated = createEmptyStats();
+
+  const increment = (counter, value) => {
+    if (!value) return;
+    counter[value] = (counter[value] || 0) + 1;
+  };
+
+  const updateStats = (target, data) => {
+    target.idcount++;
+    if (data.isdeb) target.isdebcount++;
+    if (data.trayena) target.trayenacount++;
+    if (data.wifiena) target.wifienacount++;
+    if (data.defaultos) target.defaultoscount++;
+    if (data.weirdpc) target.weirdpccount++;
+
+    if (data.launch) {
+      target.launchcount.normal += data.launch.normal || 0;
+      target.launchcount.tray += data.launch.tray || 0;
+    }
+
+    increment(target.langcount, data.lang);
+    increment(target.versioncount, data.version);
+    increment(target.buildcount, data.build);
+    increment(target.utsversioncount, data.utsversion);
+    increment(target.pcmodelcount, data.pcmodel);
+    increment(target.pcyearcount, data.pcyear);
+    increment(target.osversioncount, data.osversion);
+  };
+
+  for (const [id, data] of Object.entries(jsonData)) {
+    if (ignoredJsonData[id]) continue;
+
+    updateStats(total, data);
+
+    const lastRequest = moment(data.lastrequest, 'YYYY-MM-DD HH:mm:ss');
+    if (lastRequest.isAfter(oneMonthAgo)) updateStats(active, data);
+    else updateStats(outdated, data);
+  }
+
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify({ total, active, outdated }, null, 2));
 });
 
 app.get('/ut-stats/get-stats/usage', async (req, res) => {
   const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
   write2log(`\n\n\n[${currentTime}] New HTTP GET request (/ut-stats/get-stats/usage)\n`);
 
-  let data = await fs.readFile('data\\usage.json', 'utf8');
-  const jsonData = JSON.parse(data);
+  const rawData = await fs.readFile('data\\usage.json', 'utf8');
+  const jsonData = JSON.parse(rawData);
 
   let totalcount = 0;
-  let actioncount = {};
+  const actioncount = {};
 
-  for (const id in jsonData) {
-    for (const action in jsonData[id]) {
-      totalcount += jsonData[id][action];
-
-      if (actioncount[action]) {
-        actioncount[action] += jsonData[id][action];
-      } else {
-        actioncount[action] = jsonData[id][action];
-      }
+  for (const actions of Object.values(jsonData)) {
+    for (const [action, count] of Object.entries(actions)) {
+      totalcount += count;
+      actioncount[action] = (actioncount[action] || 0) + count;
     }
   }
 
-  const repconst = {
-    totalcount,
-    actioncount
-  }
-
-  const repconstString = JSON.stringify(repconst, null, 2);
-
   res.setHeader('Content-Type', 'application/json');
-  res.send(repconstString);
+  res.send(JSON.stringify({ totalcount, actioncount }, null, 2));
 });
 
 app.get('/ut-stats/get-stats/check', async (req, res) => {
   const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
   write2log(`\n\n\n[${currentTime}] New HTTP GET request (/ut-stats/get-stats/check)\n`);
 
-  let data = await fs.readFile('data\\check.json', 'utf8');
-  const jsonData = JSON.parse(data);
+  const rawData = await fs.readFile('data\\check.json', 'utf8');
+  const jsonData = JSON.parse(rawData);
 
-  let checkcount = {};
+  const checkcount = {};
 
-  for (const id in jsonData) {
-    for (const check in jsonData[id]) {
-      if (checkcount[check]) {
-        if (jsonData[id][check] == true) {
-          checkcount[check]++;
-        }
-      } else {
-        if (jsonData[id][check] == true) {
-          checkcount[check] = 1;
-        }
-        else {
-          checkcount[check] = 0;
-        }
+  for (const checks of Object.values(jsonData)) {
+    for (const [check, value] of Object.entries(checks)) {
+      if (value === true) {
+        checkcount[check] = (checkcount[check] || 0) + 1;
       }
     }
   }
 
-  const repconst = {
-    checkcount
-  }
-
-  const repconstString = JSON.stringify(repconst, null, 2);
-
   res.setHeader('Content-Type', 'application/json');
-  res.send(repconstString);
+  res.send(JSON.stringify({ checkcount }, null, 2));
 });
 
 app.listen(port, () => {
