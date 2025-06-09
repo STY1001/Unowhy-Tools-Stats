@@ -124,7 +124,7 @@ async function formatJSONFile(inputFile, outputFile) {
  */
 async function updateID(id, version, build, utsversion, pcmodel, pcyear, weirdpc, defaultos, osversion, lang, launchmode, trayena, isdeb, wifiena) {
   try {
-    const data = await fs.readFile('data,id.json', 'utf8');
+    const data = await fs.readFile(path.join('data', 'id.json'), 'utf8');
     let jsonData = JSON.parse(data);
 
     if (jsonData.hasOwnProperty(id)) {
