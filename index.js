@@ -4,6 +4,7 @@ const fsall = require('fs');
 const fs = require('fs').promises;
 const prettier = require('prettier');
 const moment = require('moment');
+const path = require('path');
 
 const port = 3000;
 
@@ -16,23 +17,23 @@ try {
   if (!fsall.existsSync('logs')) {
     fsall.mkdirSync('logs');
   }
-  if (!fsall.existsSync('data\\crash')) {
-    fsall.mkdirSync('data\\crash');
+  if (!fsall.existsSync(path.join('data', 'crash'))) {
+    fsall.mkdirSync(path.join('data', 'crash'));
   }
-  if (!fsall.existsSync('data\\ignoredid.json')) {
-    fsall.writeFileSync('data\\ignoredid.json', JSON.stringify({}), 'utf8');
+  if (!fsall.existsSync(path.join('data', 'ignoredid.json'))) {
+    fsall.writeFileSync(path.join('data', 'ignoredid.json'), JSON.stringify({}), 'utf8');
   }
-  if (!fsall.existsSync('data\\id.json')) {
-    fsall.writeFileSync('data\\id.json', JSON.stringify({}), 'utf8');
+  if (!fsall.existsSync(path.join('data', 'id.json'))) {
+    fsall.writeFileSync(path.join('data', 'id.json'), JSON.stringify({}), 'utf8');
   }
-  if (!fsall.existsSync('data\\usage.json')) {
-    fsall.writeFileSync('data\\usage.json', JSON.stringify({}), 'utf8');
+  if (!fsall.existsSync(path.join('data', 'usage.json'))) {
+    fsall.writeFileSync(path.join('data', 'usage.json'), JSON.stringify({}), 'utf8');
   }
-  if (!fsall.existsSync('data\\crash.json')) {
-    fsall.writeFileSync('data\\crash.json', JSON.stringify({}), 'utf8');
+  if (!fsall.existsSync(path.join('data', 'crash.json'))) {
+    fsall.writeFileSync(path.join('data', 'crash.json'), JSON.stringify({}), 'utf8');
   }
-  if (!fsall.existsSync('data\\check.json')) {
-    fsall.writeFileSync('data\\check.json', JSON.stringify({}), 'utf8');
+  if (!fsall.existsSync(path.join('data', 'check.json'))) {
+    fsall.writeFileSync(path.join('data', 'check.json'), JSON.stringify({}), 'utf8');
   }
 }
 catch (error) {
@@ -46,7 +47,7 @@ catch (error) {
  */
 function write2log(log) {
   console.log(`${log}`);
-  fsall.appendFileSync('logs\\logs.log', `${log}\n`);
+  fsall.appendFileSync(path.join('logs', 'logs.log'), `${log}\n`);
 }
 
 /**
@@ -55,7 +56,36 @@ function write2log(log) {
  */
 function write2error(error) {
   console.error(`${error}`);
-  fsall.appendFileSync('logs\\errors.log', `${error}\n`);
+  fsall.appendFileSync(path.join('logs', 'errors.log'), `${error}\n`);
+}
+
+/**
+ * Function to check if a string is a valid UUID
+ * @param {string} id - The string to check
+ * @return {boolean} - Returns true if the string is a valid UUID, false otherwise
+ */
+function isUUID(id) {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(id);
+}
+
+/**
+ * Function to log a new request
+ * @param {object} req - The request object
+ */
+function logNewRequest(req) {
+  const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
+  write2log(`\n[${currentTime}] New ${req.method} request (${req.originalUrl})`);
+}
+
+/**
+ * Function to check if a string contains prototype pollution
+ * @param {string} str - The string to check
+ * @return {boolean} - Returns true if the string contains prototype pollution, false otherwise
+ */
+function isProtoPollution(str){
+  const protoPollutionRegex = /__proto__|constructor|prototype/;
+  return protoPollutionRegex.test(str);
 }
 
 /**
@@ -94,13 +124,13 @@ async function formatJSONFile(inputFile, outputFile) {
  */
 async function updateID(id, version, build, utsversion, pcmodel, pcyear, weirdpc, defaultos, osversion, lang, launchmode, trayena, isdeb, wifiena) {
   try {
-    const data = await fs.readFile('data\\id.json', 'utf8');
+    const data = await fs.readFile('data,id.json', 'utf8');
     let jsonData = JSON.parse(data);
 
     if (jsonData.hasOwnProperty(id)) {
-      write2log('\nID already exists, updating data');
+      write2log('ID already exists, updating data');
     } else {
-      write2log('\nID does not already exist, creating data');
+      write2log('ID does not already exist, creating data');
     }
 
     jsonData[id] = {
@@ -123,7 +153,7 @@ async function updateID(id, version, build, utsversion, pcmodel, pcyear, weirdpc
       lastrequest: moment().format('YYYY-MM-DD HH:mm:ss')
     };
 
-    await fs.writeFile('data\\id.json', JSON.stringify(jsonData), 'utf8');
+    await fs.writeFile(path.join('data', 'id.json'), JSON.stringify(jsonData), 'utf8');
 
     write2log('Data updated');
   } catch (error) {
@@ -138,13 +168,13 @@ async function updateID(id, version, build, utsversion, pcmodel, pcyear, weirdpc
 */
 async function updateUsage(id, action) {
   try {
-    const data = await fs.readFile('data\\usage.json', 'utf8');
+    const data = await fs.readFile(path.join('data', 'usage.json'), 'utf8');
     let jsonData = JSON.parse(data);
 
     if (jsonData.hasOwnProperty(id)) {
-      write2log('\nID already exists, updating data');
+      write2log('ID already exists, updating data');
     } else {
-      write2log('\nID does not already exist, creating data');
+      write2log('ID does not already exist, creating data');
     }
 
     if (jsonData[id]) {
@@ -155,7 +185,7 @@ async function updateUsage(id, action) {
       };
     }
 
-    await fs.writeFile('data\\usage.json', JSON.stringify(jsonData), 'utf8');
+    await fs.writeFile(path.join('data', 'usage.json'), JSON.stringify(jsonData), 'utf8');
 
     write2log('Data updated');
   } catch (error) {
@@ -174,13 +204,13 @@ async function updateUsage(id, action) {
  */
 async function updateCrash(id, version, build, utsversion, isdeb, crashid, message) {
   try {
-    const data = await fs.readFile('data\\crash.json', 'utf8');
+    const data = await fs.readFile(path.join('data', 'crash.json'), 'utf8');
     let jsonData = JSON.parse(data);
 
     if (jsonData.hasOwnProperty(id)) {
-      write2log('\nID already exists, updating data');
+      write2log('ID already exists, updating data');
     } else {
-      write2log('\nID does not already exist, creating data');
+      write2log('ID does not already exist, creating data');
     };
 
     jsonData[id] = jsonData[id] || {};
@@ -193,7 +223,7 @@ async function updateCrash(id, version, build, utsversion, isdeb, crashid, messa
       date: moment().format('YYYY-MM-DD HH:mm:ss')
     });
 
-    await fs.writeFile('data\\crash.json', JSON.stringify(jsonData), 'utf8');
+    await fs.writeFile(path.join('data', 'crash.json'), JSON.stringify(jsonData), 'utf8');
 
     write2log('Data added');
   } catch (error) {
@@ -208,18 +238,18 @@ async function updateCrash(id, version, build, utsversion, isdeb, crashid, messa
  */
 async function updateCheck(id, check) {
   try {
-    const data = await fs.readFile('data\\check.json', 'utf8');
+    const data = await fs.readFile(path.join('data', 'check.json'), 'utf8');
     let jsonData = JSON.parse(data);
 
     if (jsonData.hasOwnProperty(id)) {
-      write2log('\nID already exists, updating data');
+      write2log('ID already exists, updating data');
     } else {
-      write2log('\nID does not already exist, creating data');
+      write2log('ID does not already exist, creating data');
     }
 
     jsonData[id] = check;
 
-    await fs.writeFile('data\\check.json', JSON.stringify(jsonData), 'utf8');
+    await fs.writeFile(path.join('data', 'check.json'), JSON.stringify(jsonData), 'utf8');
 
     write2log('Data updated');
   } catch (error) {
@@ -229,20 +259,23 @@ async function updateCheck(id, check) {
 
 app.post('/ut-stats', async (req, res) => {
   try {
-    const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
-    write2log(`\n\n\n[${currentTime}] New HTTP POST request (/ut-stats):\nJSON:`);
-
-    const jsonDataPost = JSON.stringify(req.body, null, 2);
-
-    write2log(jsonDataPost);
-    write2log('JSON End\n');
-
+    logNewRequest(req);
+    if (isProtoPollution(JSON.stringify(req.body))) {
+      write2error('Prototype pollution detected in request body');
+      res.status(400).send('Invalid request');
+      return;
+    }
     const { id, version, build, utsversion, pcmodel, pcyear, weirdpc, defaultos, osversion, lang, launchmode, trayena, isdeb, wifiena } = req.body;
+    if (!isUUID(id)) {
+      write2error(`Invalid ID format: ${id}`);
+      res.status(400).send('Invalid ID');
+      return;
+    }
 
     write2log(`ID: ${id}\nVersion: ${version}\nBuild: ${build}\nUTS Version: ${utsversion}\nPC Model: ${pcmodel}\nPC Year: ${pcyear}\nWeird PC: ${weirdpc}\nDefault OS: ${defaultos}\nOS Version: ${osversion}\nLang: ${lang}\nLaunch Mode: ${launchmode}\nTray Enabled: ${trayena}\nDebug version: ${isdeb}\nWifi Sync Enabled: ${wifiena}`);
 
     await updateID(id, version, build, utsversion, pcmodel, pcyear, weirdpc, defaultos, osversion, lang, launchmode, trayena, isdeb, wifiena);
-    await formatJSONFile('data\\id.json', 'data\\id.formatted.json');
+    await formatJSONFile(path.join('data', 'id.json'), path.join('data', 'id.formatted.json'));
 
     write2log('Done !');
     res.send('OK');
@@ -254,20 +287,23 @@ app.post('/ut-stats', async (req, res) => {
 
 app.post('/ut-stats/usage', async (req, res) => {
   try {
-    const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
-    write2log(`\n\n\n[${currentTime}] New HTTP POST request (/ut-stats/usage):\nJSON:`);
-
-    const jsonDataPost = JSON.stringify(req.body, null, 2);
-
-    write2log(jsonDataPost);
-    write2log('JSON End\n');
-
+    logNewRequest(req);
+    if (isProtoPollution(JSON.stringify(req.body))) {
+      write2error('Prototype pollution detected in request body');
+      res.status(400).send('Invalid request');
+      return;
+    }
     const { id, action } = req.body;
+    if (!isUUID(id)) {
+      write2error(`Invalid ID format: ${id}`);
+      res.status(400).send('Invalid ID');
+      return;
+    }
 
     write2error(`ID: ${id}\nAction: ${action}`);
 
     await updateUsage(id, action);
-    await formatJSONFile('data\\usage.json', 'data\\usage.formatted.json');
+    await formatJSONFile(path.join('data', 'usage.json'), path.join('data', 'usage.formatted.json'));
 
     write2log('Done !');
     res.send('OK');
@@ -279,20 +315,27 @@ app.post('/ut-stats/usage', async (req, res) => {
 
 app.post('/ut-stats/crash', async (req, res) => {
   try {
-    const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
-    write2log(`\n\n\n[${currentTime}] New HTTP POST request (/ut-stats/crash):\nJSON:`);
-
-    const jsonDataPost = JSON.stringify(req.body, null, 2);
-
-    write2log(jsonDataPost);
-    write2log('JSON End\n');
-
+    logNewRequest(req);
+    if (isProtoPollution(JSON.stringify(req.body))) {
+      write2error('Prototype pollution detected in request body');
+      res.status(400).send('Invalid request');
+      return;
+    }
     const { id, version, build, utsversion, isdeb, crashid, message } = req.body;
-
+    if (!isUUID(id)) {
+      write2error(`Invalid ID format: ${id}`);
+      res.status(400).send('Invalid ID');
+      return;
+    }
+    if (!isUUID(crashid)) {
+      write2error(`Invalid Crash ID format: ${crashid}`);
+      res.status(400).send('Invalid Crash ID');
+      return;
+    }
     write2log(`ID: ${id}\nVersion: ${version}\nBuild: ${build}\nUTS Version: ${utsversion}\nDebug version: ${isdeb}\nCrash ID: ${crashid}\nMessage: ${message}`);
 
     await updateCrash(id, version, build, utsversion, isdeb, crashid, message);
-    await formatJSONFile('data\\crash.json', 'data\\crash.formatted.json');
+    await formatJSONFile(path.join('data', 'crash.json'), path.join('data', 'crash.formatted.json'));
 
     write2log('Done !');
     res.send('OK');
@@ -304,13 +347,24 @@ app.post('/ut-stats/crash', async (req, res) => {
 
 app.post('/ut-stats/crash/logs', async (req, res) => {
   try {
+    logNewRequest(req);
+    if (isProtoPollution(JSON.stringify(req.body))) {
+      write2error('Prototype pollution detected in request body');
+      res.status(400).send('Invalid request');
+      return;
+    }
     const crashid = req.headers['crashid'];
+
+    if (!isUUID(crashid)) {
+      write2error(`Invalid Crash ID format: ${crashid}`);
+      res.status(400).send('Invalid Crash ID');
+      return;
+    }
+
     const logstext = req.body;
-    const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
-    write2log(`\n\n\n[${currentTime}] New HTTP POST request (/ut-stats/crash/logs):\n`);
     write2log(`Crash ID: ${crashid}`);
 
-    await fs.writeFile(`data\\crash\\${crashid}.log`, logstext, 'utf8');
+    await fs.writeFile(path.join('data', 'crash', `${crashid}.log`), logstext, 'utf8');
 
     write2log('Done !');
     res.send('OK');
@@ -322,20 +376,23 @@ app.post('/ut-stats/crash/logs', async (req, res) => {
 
 app.post('/ut-stats/check', async (req, res) => {
   try {
-    const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
-    write2log(`\n\n\n[${currentTime}] New HTTP POST request (/ut-stats/check):\nJSON:`);
-
-    const jsonDataPost = JSON.stringify(req.body, null, 2);
-
-    write2log(jsonDataPost);
-    write2log('JSON End\n');
-
+    logNewRequest(req);
+    if (isProtoPollution(JSON.stringify(req.body))) {
+      write2error('Prototype pollution detected in request body');
+      res.status(400).send('Invalid request');
+      return;
+    }
     const { id, check } = req.body;
+    if (!isUUID(id)) {
+      write2error(`Invalid ID format: ${id}`);
+      res.status(400).send('Invalid ID');
+      return;
+    }
 
     write2log(`ID: ${id}\nCheck: ${check}`);
 
     await updateCheck(id, check);
-    await formatJSONFile('data\\check.json', 'data\\check.formatted.json');
+    await formatJSONFile(path.join('data', 'check.json'), path.join('data', 'check.formatted.json'));
 
     write2log('Done !');
     res.send('OK');
@@ -347,9 +404,8 @@ app.post('/ut-stats/check', async (req, res) => {
 });
 
 app.get('/ut-stats', async (req, res) => {
-  const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
-  write2log(`\n\n\n[${currentTime}] New HTTP GET request (/ut-stats)\n`);
-
+  logNewRequest(req);
+  
   const repconst = {
     Name: 'Unowhy Tools Stats',
     Author: 'STY1001',
@@ -366,10 +422,10 @@ app.get('/ut-stats', async (req, res) => {
   const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
   write2log(`\n\n\n[${currentTime}] New HTTP GET request (/ut-stats/get-stats)\n`);
 
-  let data = await fs.readFile('data\\id.json', 'utf8');
+  let data = await fs.readFile(path.join('data', 'id.json'), 'utf8');
   const jsonData = JSON.parse(data);
 
-  data = await fs.readFile('data\\ignoredid.json', 'utf8');
+  data = await fs.readFile(path.join('data', 'ignoredid.json'), 'utf8');
   const ignoredJsonData = JSON.parse(data);
 
   let totalidCount = Object.keys(jsonData).length - Object.keys(ignoredJsonData).length;
@@ -688,12 +744,11 @@ app.get('/ut-stats', async (req, res) => {
 }); */
 
 app.get('/ut-stats/get-stats', async (req, res) => {
-  const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
-  write2log(`\n\n\n[${currentTime}] New HTTP GET request (/ut-stats/get-stats)\n`);
+  logNewRequest(req);
 
   const [rawJson, rawIgnored] = await Promise.all([
-    fs.readFile('data\\id.json', 'utf8'),
-    fs.readFile('data\\ignoredid.json', 'utf8')
+    fs.readFile(path.join('data', 'id.json'), 'utf8'),
+    fs.readFile(path.join('data', 'ignoredid.json'), 'utf8')
   ]);
 
   const jsonData = JSON.parse(rawJson);
@@ -765,10 +820,9 @@ app.get('/ut-stats/get-stats', async (req, res) => {
 });
 
 app.get('/ut-stats/get-stats/usage', async (req, res) => {
-  const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
-  write2log(`\n\n\n[${currentTime}] New HTTP GET request (/ut-stats/get-stats/usage)\n`);
+  logNewRequest(req);
 
-  const rawData = await fs.readFile('data\\usage.json', 'utf8');
+  const rawData = await fs.readFile(path.join('data', 'usage.json'), 'utf8');
   const jsonData = JSON.parse(rawData);
 
   let totalcount = 0;
@@ -786,10 +840,9 @@ app.get('/ut-stats/get-stats/usage', async (req, res) => {
 });
 
 app.get('/ut-stats/get-stats/check', async (req, res) => {
-  const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
-  write2log(`\n\n\n[${currentTime}] New HTTP GET request (/ut-stats/get-stats/check)\n`);
+  logNewRequest(req);
 
-  const rawData = await fs.readFile('data\\check.json', 'utf8');
+  const rawData = await fs.readFile(path.join('data', 'check.json'), 'utf8');
   const jsonData = JSON.parse(rawData);
 
   const checkcount = {};
