@@ -2,44 +2,36 @@ const express = require('express');
 const app = express();
 const fsall = require('fs');
 const fs = require('fs').promises;
-const prettier = require('prettier');
 const moment = require('moment');
 const path = require('path');
+const mysql = require('mysql2/promise');
 
-const port = 3000;
+require('dotenv').config();
 
+const port = process.env.PORT || 3000;
+const dbConfig = {
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'ut_stats',
+  waitForConnections: true,
+  connectionLimit: 1,
+  queueLimit: 0
+};
 app.use(express.json());
-app.use(express.text({ limit: '10mb' }));
-try {
-  if (!fsall.existsSync('data')) {
-    fsall.mkdirSync('data');
-  }
-  if (!fsall.existsSync('logs')) {
-    fsall.mkdirSync('logs');
-  }
-  if (!fsall.existsSync(path.join('data', 'crash'))) {
-    fsall.mkdirSync(path.join('data', 'crash'));
-  }
-  if (!fsall.existsSync(path.join('data', 'ignoredid.json'))) {
-    fsall.writeFileSync(path.join('data', 'ignoredid.json'), JSON.stringify({}), 'utf8');
-  }
-  if (!fsall.existsSync(path.join('data', 'id.json'))) {
-    fsall.writeFileSync(path.join('data', 'id.json'), JSON.stringify({}), 'utf8');
-  }
-  if (!fsall.existsSync(path.join('data', 'usage.json'))) {
-    fsall.writeFileSync(path.join('data', 'usage.json'), JSON.stringify({}), 'utf8');
-  }
-  if (!fsall.existsSync(path.join('data', 'crash.json'))) {
-    fsall.writeFileSync(path.join('data', 'crash.json'), JSON.stringify({}), 'utf8');
-  }
-  if (!fsall.existsSync(path.join('data', 'check.json'))) {
-    fsall.writeFileSync(path.join('data', 'check.json'), JSON.stringify({}), 'utf8');
-  }
+app.use(express.text({ limit: '16mb' }));
+
+
+write2log(`UT Stats server\nby STY1001\nStarting...`);
+
+if (!fsall.existsSync('logs')) {
+  fsall.mkdirSync('logs');
+  write2log('Created logs directory');
 }
-catch (error) {
-  write2error(error);
-  process.exit(1);
-}
+
+// Connect to the database
+write2log(`Connecting to database at ${dbConfig.host}...`);
+const dbConnection = mysql.createPool(dbConfig);
 
 /**
  * Function to log to a file and to the console
@@ -83,178 +75,29 @@ function logNewRequest(req) {
  * @param {string} str - The string to check
  * @return {boolean} - Returns true if the string contains prototype pollution, false otherwise
  */
-function isProtoPollution(str){
+function isProtoPollution(str) {
   const protoPollutionRegex = /__proto__|constructor|prototype/;
   return protoPollutionRegex.test(str);
 }
 
 /**
- * Function to format a JSON file
- * @param {string} inputFile - The path of the input JSON file
- * @param {string} outputFile - The path of the output formatted JSON file
+ * Function to normalize booleans in an object
+ * @param {object} obj - The object to normalize
+ * @return {object} - Returns the object with normalized booleans
  */
-async function formatJSONFile(inputFile, outputFile) {
-  try {
-    const data = await fs.readFile(inputFile, 'utf8');
-    const jsonData = JSON.parse(data);
-    const formattedData = prettier.format(JSON.stringify(jsonData), { parser: 'json' });
-    await fs.writeFile(outputFile, formattedData, 'utf8');
-    write2log('JSON file formatted');
-  } catch (error) {
-    write2error(error);
-  }
-}
-
-/**
- * Function to update ID JSON data based on specific parameters
- * @param {string} id - The identifier
- * @param {string} version - The version
- * @param {string} build - The build
- * @param {string} utsversion - The UTS version
- * @param {string} pcmodel - The PC model
- * @param {string} pcyear - The PC year
- * @param {boolean} weirdpc - The weird PC status
- * @param {string} defaultos - The default OS status
- * @param {string} osversion - The OS version
- * @param {string} lang - The language
- * @param {string} launchmode - The launch mode
- * @param {boolean} trayena - The tray enabled status
- * @param {boolean} isdeb - The debug version status
- * @param {boolean} wifiena - The WiFi sync enabled status
- */
-async function updateID(id, version, build, utsversion, pcmodel, pcyear, weirdpc, defaultos, osversion, lang, launchmode, trayena, isdeb, wifiena) {
-  try {
-    const data = await fs.readFile(path.join('data', 'id.json'), 'utf8');
-    let jsonData = JSON.parse(data);
-
-    if (jsonData.hasOwnProperty(id)) {
-      write2log('ID already exists, updating data');
-    } else {
-      write2log('ID does not already exist, creating data');
+function normalizeBooleans(obj) {
+  for (const key in obj) {
+    if (typeof obj[key] === 'string') {
+      if (obj[key].toLowerCase() === 'true') {
+        obj[key] = true;
+      } else if (obj[key].toLowerCase() === 'false') {
+        obj[key] = false;
+      }
+    } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+      normalizeBooleans(obj[key]);
     }
-
-    jsonData[id] = {
-      launch: {
-        normal: launchmode === 'normal' ? 1 : 0,
-        tray: launchmode === 'tray' ? 1 : 0
-      },
-      version,
-      build,
-      utsversion,
-      pcmodel,
-      pcyear,
-      weirdpc,
-      defaultos,
-      osversion,
-      lang,
-      trayena,
-      isdeb,
-      wifiena,
-      lastrequest: moment().format('YYYY-MM-DD HH:mm:ss')
-    };
-
-    await fs.writeFile(path.join('data', 'id.json'), JSON.stringify(jsonData), 'utf8');
-
-    write2log('Data updated');
-  } catch (error) {
-    write2error(error);
   }
-}
-
-/**
- * Function to update usage JSON data based on specific parameters
- * @param {string} id - The identifier
- * @param {string} action - The action
-*/
-async function updateUsage(id, action) {
-  try {
-    const data = await fs.readFile(path.join('data', 'usage.json'), 'utf8');
-    let jsonData = JSON.parse(data);
-
-    if (jsonData.hasOwnProperty(id)) {
-      write2log('ID already exists, updating data');
-    } else {
-      write2log('ID does not already exist, creating data');
-    }
-
-    if (jsonData[id]) {
-      jsonData[id][action] = jsonData[id][action] ? jsonData[id][action] + 1 : 1;
-    } else {
-      jsonData[id] = {
-        [action]: 1
-      };
-    }
-
-    await fs.writeFile(path.join('data', 'usage.json'), JSON.stringify(jsonData), 'utf8');
-
-    write2log('Data updated');
-  } catch (error) {
-    write2error(error);
-  }
-}
-
-/**
- * Function to update crash JSON data based on specific parameters
- * @param {string} id - The identifier
- * @param {string} version - The version
- * @param {string} build - The build
- * @param {string} utsversion - The UTS version
- * @param {boolean} isdeb - The debug version status
- * @param {string} crashid - The crash identifier
- */
-async function updateCrash(id, version, build, utsversion, isdeb, crashid, message) {
-  try {
-    const data = await fs.readFile(path.join('data', 'crash.json'), 'utf8');
-    let jsonData = JSON.parse(data);
-
-    if (jsonData.hasOwnProperty(id)) {
-      write2log('ID already exists, updating data');
-    } else {
-      write2log('ID does not already exist, creating data');
-    };
-
-    jsonData[id] = jsonData[id] || {};
-    jsonData[id][crashid] = ({
-      version,
-      build,
-      utsversion,
-      isdeb,
-      message,
-      date: moment().format('YYYY-MM-DD HH:mm:ss')
-    });
-
-    await fs.writeFile(path.join('data', 'crash.json'), JSON.stringify(jsonData), 'utf8');
-
-    write2log('Data added');
-  } catch (error) {
-    write2error(error);
-  }
-}
-
-/**
- * Function to update check JSON data based on specific parameters
- * @param {string} id - The identifier
- * @param {string} check - The check
- */
-async function updateCheck(id, check) {
-  try {
-    const data = await fs.readFile(path.join('data', 'check.json'), 'utf8');
-    let jsonData = JSON.parse(data);
-
-    if (jsonData.hasOwnProperty(id)) {
-      write2log('ID already exists, updating data');
-    } else {
-      write2log('ID does not already exist, creating data');
-    }
-
-    jsonData[id] = check;
-
-    await fs.writeFile(path.join('data', 'check.json'), JSON.stringify(jsonData), 'utf8');
-
-    write2log('Data updated');
-  } catch (error) {
-    write2error(error);
-  }
+  return obj;
 }
 
 app.post('/ut-stats', async (req, res) => {
@@ -265,17 +108,71 @@ app.post('/ut-stats', async (req, res) => {
       res.status(400).send('Invalid request');
       return;
     }
-    const { id, version, build, utsversion, pcmodel, pcyear, weirdpc, defaultos, osversion, lang, launchmode, trayena, isdeb, wifiena } = req.body;
+    const normalizedBody = normalizeBooleans(req.body);
+    const { id, version, build, utsversion, pcmodel, weirdpc, defaultos, osversion, lang, launchmode, trayena, isdeb, wifiena } = normalizedBody;
     if (!isUUID(id)) {
       write2error(`Invalid ID format: ${id}`);
-      res.status(400).send('Invalid ID');
+      res.status(400).send('Invalid request');
       return;
     }
 
-    write2log(`ID: ${id}\nVersion: ${version}\nBuild: ${build}\nUTS Version: ${utsversion}\nPC Model: ${pcmodel}\nPC Year: ${pcyear}\nWeird PC: ${weirdpc}\nDefault OS: ${defaultos}\nOS Version: ${osversion}\nLang: ${lang}\nLaunch Mode: ${launchmode}\nTray Enabled: ${trayena}\nDebug version: ${isdeb}\nWifi Sync Enabled: ${wifiena}`);
+    write2log(`ID: ${id}\nVersion: ${version}\nBuild: ${build}\nUTS Version: ${utsversion}\nPC Model: ${pcmodel}\nWeird PC: ${weirdpc}\nDefault OS: ${defaultos}\nOS Version: ${osversion}\nLang: ${lang}\nLaunch Mode: ${launchmode}\nTray Enabled: ${trayena}\nDebug version: ${isdeb}\nWifi Sync Enabled: ${wifiena}`);
 
-    await updateID(id, version, build, utsversion, pcmodel, pcyear, weirdpc, defaultos, osversion, lang, launchmode, trayena, isdeb, wifiena);
-    await formatJSONFile(path.join('data', 'id.json'), path.join('data', 'id.formatted.json'));
+    const sql1 = `INSERT INTO ids (id, version, build, utsversion, pcmodel, weirdpc, defaultos, osversion, lang, trayena, isdeb, wifiena, lastrequest)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE
+    version = VALUES(version),
+    build = VALUES(build),
+    utsversion = VALUES(utsversion),
+    pcmodel = VALUES(pcmodel),
+    weirdpc = VALUES(weirdpc),
+    defaultos = VALUES(defaultos),
+    osversion = VALUES(osversion),
+    lang = VALUES(lang),
+    trayena = VALUES(trayena),
+    isdeb = VALUES(isdeb),
+    wifiena = VALUES(wifiena),
+    lastrequest = VALUES(lastrequest);`
+    const lastRequest = moment().format('YYYY-MM-DD HH:mm:ss');
+    const values = [id, version, build, utsversion, pcmodel, weirdpc, defaultos, osversion, lang, trayena, isdeb, wifiena, lastRequest];
+
+    try {
+      await dbConnection.execute(sql1, values);
+      write2log(`Data for ID ${id} updated successfully.`);
+    } catch (dbError) {
+      write2error(`Database error: ${dbError}`);
+      res.status(500).send('Database error');
+      return;
+    }
+
+    if (launchmode === 'tray') {
+      const sql2 = `INSERT INTO launches(id, normal, tray)
+      VALUES (?, 0, 1) 
+      ON DUPLICATE KEY UPDATE tray = tray + 1;`;
+      const values2 = [id];
+      try {
+        await dbConnection.execute(sql2, values2);
+        write2log(`Tray launch count for ID ${id} updated successfully.`);
+      } catch (dbError) {
+        write2error(`Database error: ${dbError}`);
+        res.status(500).send('Database error');
+        return;
+      }
+    }
+    if (launchmode === 'normal') {
+      const sql2 = `INSERT INTO launches(id, normal, tray)
+      VALUES (?, 1, 0) 
+      ON DUPLICATE KEY UPDATE normal = normal + 1;`;
+      const values2 = [id];
+      try {
+        await dbConnection.execute(sql2, values2);
+        write2log(`Normal launch count for ID ${id} updated successfully.`);
+      } catch (dbError) {
+        write2error(`Database error: ${dbError}`);
+        res.status(500).send('Database error');
+        return;
+      }
+    }
 
     write2log('Done !');
     res.send('OK');
@@ -302,8 +199,19 @@ app.post('/ut-stats/usage', async (req, res) => {
 
     write2error(`ID: ${id}\nAction: ${action}`);
 
-    await updateUsage(id, action);
-    await formatJSONFile(path.join('data', 'usage.json'), path.join('data', 'usage.formatted.json'));
+    const sql = `INSERT INTO usages (id, action, count)
+    VALUES (?, ?, 1)
+    ON DUPLICATE KEY UPDATE count = count + 1;`;
+    const values = [id, action];
+    try {
+      await dbConnection.execute(sql, values);
+      write2log(`Usage action ${action} for ID ${id} updated successfully.`);
+    }
+    catch (dbError) {
+      write2error(`Database error: ${dbError}`);
+      res.status(500).send('Database error');
+      return;
+    }
 
     write2log('Done !');
     res.send('OK');
@@ -321,7 +229,8 @@ app.post('/ut-stats/crash', async (req, res) => {
       res.status(400).send('Invalid request');
       return;
     }
-    const { id, version, build, utsversion, isdeb, crashid, message } = req.body;
+    const normalizedBody = normalizeBooleans(req.body);
+    const { id, version, build, utsversion, isdeb, crashid, message } = normalizedBody;
     if (!isUUID(id)) {
       write2error(`Invalid ID format: ${id}`);
       res.status(400).send('Invalid ID');
@@ -334,8 +243,24 @@ app.post('/ut-stats/crash', async (req, res) => {
     }
     write2log(`ID: ${id}\nVersion: ${version}\nBuild: ${build}\nUTS Version: ${utsversion}\nDebug version: ${isdeb}\nCrash ID: ${crashid}\nMessage: ${message}`);
 
-    await updateCrash(id, version, build, utsversion, isdeb, crashid, message);
-    await formatJSONFile(path.join('data', 'crash.json'), path.join('data', 'crash.formatted.json'));
+    const sql = `INSERT INTO crashes (id, version, build, utsversion, isdeb, crash, message)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE
+    version = VALUES(version),
+    build = VALUES(build),
+    utsversion = VALUES(utsversion),
+    isdeb = VALUES(isdeb),
+    crash = VALUES(crash),
+    message = VALUES(message);`;
+    const values = [id, version, build, utsversion, isdeb, crashid, message];
+    try {
+      await dbConnection.execute(sql, values);
+      write2log(`Crash data for ID ${id} updated successfully.`);
+    } catch (dbError) {
+      write2error(`Database error: ${dbError}`);
+      res.status(500).send('Database error');
+      return;
+    }
 
     write2log('Done !');
     res.send('OK');
@@ -354,7 +279,6 @@ app.post('/ut-stats/crash/logs', async (req, res) => {
       return;
     }
     const crashid = req.headers['crashid'];
-
     if (!isUUID(crashid)) {
       write2error(`Invalid Crash ID format: ${crashid}`);
       res.status(400).send('Invalid Crash ID');
@@ -364,7 +288,20 @@ app.post('/ut-stats/crash/logs', async (req, res) => {
     const logstext = req.body;
     write2log(`Crash ID: ${crashid}`);
 
-    await fs.writeFile(path.join('data', 'crash', `${crashid}.log`), logstext, 'utf8');
+    const sql = `INSERT INTO logs (crash, log)
+    VALUES (?, ?)
+    ON DUPLICATE KEY UPDATE
+    log = VALUES(log);`;
+    const values = [crashid, logstext];
+    try {
+      await dbConnection.execute(sql, values);
+      write2log(`Logs for Crash ID ${crashid} updated successfully.`);
+    }
+    catch (dbError) {
+      write2error(`Database error: ${dbError}`);
+      res.status(500).send('Database error');
+      return;
+    }
 
     write2log('Done !');
     res.send('OK');
@@ -389,10 +326,26 @@ app.post('/ut-stats/check', async (req, res) => {
       return;
     }
 
-    write2log(`ID: ${id}\nCheck: ${check}`);
+    write2log(`ID: ${id}\nCheck:`);
+    for (const [key, value] of Object.entries(check)) {
+      write2log(`  ${key}: ${value}`);
+    }
 
-    await updateCheck(id, check);
-    await formatJSONFile(path.join('data', 'check.json'), path.join('data', 'check.formatted.json'));
+    for (const [key, value] of Object.entries(check)) {
+      const sql = `INSERT INTO checks (id, variable, value)
+      VALUES (?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+      value = VALUES(value);`;
+      const values = [id, key, value];
+      try {
+        await dbConnection.execute(sql, values);
+      } catch (dbError) {
+        write2error(`Database error: ${dbError}`);
+        res.status(500).send('Database error');
+        return;
+      }
+    }
+    write2log(`Checks for ID ${id} updated successfully.`);
 
     write2log('Done !');
     res.send('OK');
@@ -405,7 +358,7 @@ app.post('/ut-stats/check', async (req, res) => {
 
 app.get('/ut-stats', async (req, res) => {
   logNewRequest(req);
-  
+
   const repconst = {
     Name: 'Unowhy Tools Stats',
     Author: 'STY1001',
@@ -418,447 +371,134 @@ app.get('/ut-stats', async (req, res) => {
   res.send(repconstString);
 });
 
-/*app.get('/ut-stats/get-stats', async (req, res) => {
-  const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
-  write2log(`\n\n\n[${currentTime}] New HTTP GET request (/ut-stats/get-stats)\n`);
-
-  let data = await fs.readFile(path.join('data', 'id.json'), 'utf8');
-  const jsonData = JSON.parse(data);
-
-  data = await fs.readFile(path.join('data', 'ignoredid.json'), 'utf8');
-  const ignoredJsonData = JSON.parse(data);
-
-  let totalidCount = Object.keys(jsonData).length - Object.keys(ignoredJsonData).length;
-  let totalisdebCount = 0;
-  let totaltrayenaCount = 0;
-  let totalwifienaCount = 0;
-  let totallaunchnCount = 0;
-  let totallaunchtCount = 0;
-  let totaldefaultosCount = 0;
-  let totalweirdpcCount = 0;
-
-  let activeidCount = 0;
-  let activeisdebCount = 0;
-  let activetrayenaCount = 0;
-  let activewifienaCount = 0;
-  let activelaunchnCount = 0;
-  let activelaunchtCount = 0;
-  let activedefaultosCount = 0;
-  let activeweirdpcCount = 0;
-
-  let outdatedidCount = 0;
-  let outdatedisdebCount = 0;
-  let outdatedtrayenaCount = 0;
-  let outdatedwifienaCount = 0;
-  let outdatedlaunchnCount = 0;
-  let outdatedlaunchtCount = 0;
-  let outdateddefaultosCount = 0;
-  let outdatedweirdpcCount = 0;
-
-  for (const id in jsonData) {
-    if (!ignoredJsonData[id]) {
-      if (jsonData[id].isdeb) totalisdebCount++;
-      if (jsonData[id].trayena) totaltrayenaCount++;
-      if (jsonData[id].wifiena) totalwifienaCount++;
-      if (jsonData[id].defaultos) totaldefaultosCount++;
-      if (jsonData[id].weirdpc) totalweirdpcCount++;
-      totallaunchnCount += jsonData[id].launch.normal;
-      totallaunchtCount += jsonData[id].launch.tray;
-    }
-  }
-
-  for (const id in jsonData) {
-    if (!ignoredJsonData[id]) {
-      const lastRequestDate = moment(jsonData[id].lastrequest, 'YYYY-MM-DD HH:mm:ss');
-      if (lastRequestDate.isAfter(moment().subtract(1, 'months'))) {
-        activeidCount++;
-        if (jsonData[id].isdeb) activeisdebCount++;
-        if (jsonData[id].trayena) activetrayenaCount++;
-        if (jsonData[id].wifiena) activewifienaCount++;
-        if (jsonData[id].defaultos) activedefaultosCount++;
-        if (jsonData[id].weirdpc) activeweirdpcCount++;
-        activelaunchnCount += jsonData[id].launch.normal;
-        activelaunchtCount += jsonData[id].launch.tray;
-      }
-    }
-  }
-
-  for (const id in jsonData) {
-    if (!ignoredJsonData[id]) {
-      const lastRequestDate = moment(jsonData[id].lastrequest, 'YYYY-MM-DD HH:mm:ss');
-      if (lastRequestDate.isBefore(moment().subtract(1, 'months'))) {
-        outdatedidCount++;
-        if (jsonData[id].isdeb) outdatedisdebCount++;
-        if (jsonData[id].trayena) outdatedtrayenaCount++;
-        if (jsonData[id].wifiena) outdatedwifienaCount++;
-        if (jsonData[id].defaultos) outdateddefaultosCount++;
-        if (jsonData[id].weirdpc) outdatedweirdpcCount++;
-        outdatedlaunchnCount += jsonData[id].launch.normal;
-        outdatedlaunchtCount += jsonData[id].launch.tray;
-      }
-    }
-  }
-
-  const totalconst = {
-    idcount: totalidCount,
-    versioncount: {},
-    buildcount: {},
-    utsversioncount: {},
-    pcmodelcount: {},
-    pcyearcount: {},
-    weirdpccount: totalweirdpcCount,
-    defaultoscount: totaldefaultosCount,
-    osversioncount: {},
-    langcount: {},
-    isdebcount: totalisdebCount,
-    trayenacount: totaltrayenaCount,
-    wifienacount: totalwifienaCount,
-    launchcount: {
-      normal: totallaunchnCount,
-      tray: totallaunchtCount
-    }
-  };
-
-  const activeconst = {
-    idcount: activeidCount,
-    versioncount: {},
-    buildcount: {},
-    utsversioncount: {},
-    pcmodelcount: {},
-    pcyearcount: {},
-    weirdpccount: activeweirdpcCount,
-    defaultoscount: activedefaultosCount,
-    osversioncount: {},
-    langcount: {},
-    isdebcount: activeisdebCount,
-    trayenacount: activetrayenaCount,
-    wifienacount: activewifienaCount,
-    launchcount: {
-      normal: activelaunchnCount,
-      tray: activelaunchtCount
-    }
-  };
-
-  const outdatedconst = {
-    idcount: outdatedidCount,
-    versioncount: {},
-    buildcount: {},
-    utsversioncount: {},
-    pcmodelcount: {},
-    pcyearcount: {},
-    weirdpccount: outdatedweirdpcCount,
-    defaultoscount: outdateddefaultosCount,
-    osversioncount: {},
-    langcount: {},
-    isdebcount: outdatedisdebCount,
-    trayenacount: outdatedtrayenaCount,
-    wifienacount: outdatedwifienaCount,
-    launchcount: {
-      normal: outdatedlaunchnCount,
-      tray: outdatedlaunchtCount
-    }
-  };
-
-  for (const id in jsonData) {
-    if (!ignoredJsonData[id]) {
-      const lang = jsonData[id].lang;
-
-      if (totalconst.langcount[lang]) {
-        totalconst.langcount[lang]++;
-      } else {
-        totalconst.langcount[lang] = 1;
-      }
-
-      const version = jsonData[id].version;
-
-      if (totalconst.versioncount[version]) {
-        totalconst.versioncount[version]++;
-      } else {
-        totalconst.versioncount[version] = 1;
-      }
-
-      const build = jsonData[id].build;
-      if (totalconst.buildcount[build]) {
-        totalconst.buildcount[build]++;
-      } else {
-        totalconst.buildcount[build] = 1;
-      }
-
-      const utsversion = jsonData[id].utsversion;
-      if (totalconst.utsversioncount[utsversion]) {
-        totalconst.utsversioncount[utsversion]++;
-      } else {
-        totalconst.utsversioncount[utsversion] = 1;
-      }
-
-      const pcmodel = jsonData[id].pcmodel;
-      if (totalconst.pcmodelcount[pcmodel]) {
-        totalconst.pcmodelcount[pcmodel]++;
-      } else {
-        totalconst.pcmodelcount[pcmodel] = 1;
-      }
-
-      const pcyear = jsonData[id].pcyear;
-      if (totalconst.pcyearcount[pcyear]) {
-        totalconst.pcyearcount[pcyear]++;
-      } else {
-        totalconst.pcyearcount[pcyear] = 1;
-      }
-
-      const osversion = jsonData[id].osversion;
-      if (totalconst.osversioncount[osversion]) {
-        totalconst.osversioncount[osversion]++;
-      } else {
-        totalconst.osversioncount[osversion] = 1;
-      }
-    }
-  }
-
-  for (const id in jsonData) {
-    if (!ignoredJsonData[id]) {
-      const lastRequestDate = moment(jsonData[id].lastrequest, 'YYYY-MM-DD HH:mm:ss');
-      if (lastRequestDate.isAfter(moment().subtract(1, 'months'))) {
-        const lang = jsonData[id].lang;
-
-        if (activeconst.langcount[lang]) {
-          activeconst.langcount[lang]++;
-        } else {
-          activeconst.langcount[lang] = 1;
-        }
-
-        const version = jsonData[id].version;
-
-        if (activeconst.versioncount[version]) {
-          activeconst.versioncount[version]++;
-        } else {
-          activeconst.versioncount[version] = 1;
-        }
-
-        const build = jsonData[id].build;
-        if (activeconst.buildcount[build]) {
-          activeconst.buildcount[build]++;
-        } else {
-          activeconst.buildcount[build] = 1;
-        }
-
-        const utsversion = jsonData[id].utsversion;
-        if (activeconst.utsversioncount[utsversion]) {
-          activeconst.utsversioncount[utsversion]++;
-        } else {
-          activeconst.utsversioncount[utsversion] = 1;
-        }
-
-        const pcmodel = jsonData[id].pcmodel;
-        if (activeconst.pcmodelcount[pcmodel]) {
-          activeconst.pcmodelcount[pcmodel]++;
-        }
-        else {
-          activeconst.pcmodelcount[pcmodel] = 1;
-        }
-
-        const pcyear = jsonData[id].pcyear;
-        if (activeconst.pcyearcount[pcyear]) {
-          activeconst.pcyearcount[pcyear]++;
-        } else {
-          activeconst.pcyearcount[pcyear] = 1;
-        }
-
-        const osversion = jsonData[id].osversion;
-        if (activeconst.osversioncount[osversion]) {
-          activeconst.osversioncount[osversion]++;
-        } else {
-          activeconst.osversioncount[osversion] = 1;
-        }
-      }
-    }
-  }
-
-  for (const id in jsonData) {
-    if (!ignoredJsonData[id]) {
-      const lastRequestDate = moment(jsonData[id].lastrequest, 'YYYY-MM-DD HH:mm:ss');
-      if (lastRequestDate.isBefore(moment().subtract(1, 'months'))) {
-        const lang = jsonData[id].lang;
-
-        if (outdatedconst.langcount[lang]) {
-          outdatedconst.langcount[lang]++;
-        } else {
-          outdatedconst.langcount[lang] = 1;
-        }
-
-        const version = jsonData[id].version;
-
-        if (outdatedconst.versioncount[version]) {
-          outdatedconst.versioncount[version]++;
-        } else {
-          outdatedconst.versioncount[version] = 1;
-        }
-
-        const build = jsonData[id].build;
-        if (outdatedconst.buildcount[build]) {
-          outdatedconst.buildcount[build]++;
-        } else {
-          outdatedconst.buildcount[build] = 1;
-        }
-
-        const utsversion = jsonData[id].utsversion;
-        if (outdatedconst.utsversioncount[utsversion]) {
-          outdatedconst.utsversioncount[utsversion]++;
-        } else {
-          outdatedconst.utsversioncount[utsversion] = 1;
-        }
-
-        const pcmodel = jsonData[id].pcmodel;
-        if (outdatedconst.pcmodelcount[pcmodel]) {
-          outdatedconst.pcmodelcount[pcmodel]++;
-        } else {
-          outdatedconst.pcmodelcount[pcmodel] = 1;
-        }
-
-        const pcyear = jsonData[id].pcyear;
-        if (outdatedconst.pcyearcount[pcyear]) {
-          outdatedconst.pcyearcount[pcyear]++;
-        } else {
-          outdatedconst.pcyearcount[pcyear] = 1;
-        }
-
-        const osversion = jsonData[id].osversion;
-        if (outdatedconst.osversioncount[osversion]) {
-          outdatedconst.osversioncount[osversion]++;
-        } else {
-          outdatedconst.osversioncount[osversion] = 1;
-        }
-      }
-    }
-  }
-
-  const repconst = {
-    total: totalconst,
-    active: activeconst,
-    outdated: outdatedconst
-  }
-
-  const repconstString = JSON.stringify(repconst, null, 2);
-
-  res.setHeader('Content-Type', 'application/json');
-  res.send(repconstString);
-}); */
-
 app.get('/ut-stats/get-stats', async (req, res) => {
-  logNewRequest(req);
+  try {
+    logNewRequest(req);
 
-  const [rawJson, rawIgnored] = await Promise.all([
-    fs.readFile(path.join('data', 'id.json'), 'utf8'),
-    fs.readFile(path.join('data', 'ignoredid.json'), 'utf8')
-  ]);
+    const oneMonthAgo = moment().subtract(1, 'months').format('YYYY-MM-DD');
 
-  const jsonData = JSON.parse(rawJson);
-  const ignoredJsonData = JSON.parse(rawIgnored);
+    const scopes = {
+      total: 'WHERE 1',
+      active: `WHERE ids.lastrequest IS NOT NULL AND ids.lastrequest > '${oneMonthAgo}'`,
+      outdated: `WHERE ids.lastrequest IS NULL OR ids.lastrequest <= '${oneMonthAgo}'`
+    };
 
-  const now = moment();
-  const oneMonthAgo = now.clone().subtract(1, 'months');
+    const result = {};
 
-  const createEmptyStats = () => ({
-    idcount: 0,
-    isdebcount: 0,
-    trayenacount: 0,
-    wifienacount: 0,
-    defaultoscount: 0,
-    weirdpccount: 0,
-    launchcount: { normal: 0, tray: 0 },
-    versioncount: {},
-    buildcount: {},
-    utsversioncount: {},
-    pcmodelcount: {},
-    pcyearcount: {},
-    osversioncount: {},
-    langcount: {}
-  });
+    for (const [key, where] of Object.entries(scopes)) {
+      const [idcount] = await dbConnection.execute(`SELECT COUNT(*) AS count FROM ids ${where}`);
+      const [isdebcount] = await dbConnection.execute(`SELECT COUNT(*) AS count FROM ids ${where && where + ' AND isdeb = 1'}`);
+      const [trayenacount] = await dbConnection.execute(`SELECT COUNT(*) AS count FROM ids ${where && where + ' AND trayena = 1'}`);
+      const [wifienacount] = await dbConnection.execute(`SELECT COUNT(*) AS count FROM ids ${where && where + ' AND wifiena = 1'}`);
+      const [defaultoscount] = await dbConnection.execute(`SELECT COUNT(*) AS count FROM ids ${where && where + ' AND defaultos = 1'}`);
+      const [weirdpccount] = await dbConnection.execute(`SELECT COUNT(*) AS count FROM ids ${where && where + ' AND weirdpc = 1'}`);
 
-  const total = createEmptyStats();
-  const active = createEmptyStats();
-  const outdated = createEmptyStats();
+      const [versioncount] = await dbConnection.execute(`SELECT version, COUNT(*) AS count FROM ids ${where} GROUP BY version`);
+      const [buildcount] = await dbConnection.execute(`SELECT build, COUNT(*) AS count FROM ids ${where} GROUP BY build`);
+      const [utsversioncount] = await dbConnection.execute(`SELECT utsversion, COUNT(*) AS count FROM ids ${where} GROUP BY utsversion`);
+      const [pcmodelcount] = await dbConnection.execute(`SELECT pcmodel, COUNT(*) AS count FROM ids ${where} GROUP BY pcmodel`);
+      const [osversioncount] = await dbConnection.execute(`SELECT osversion, COUNT(*) AS count FROM ids ${where} GROUP BY osversion`);
+      const [langcount] = await dbConnection.execute(`SELECT lang, COUNT(*) AS count FROM ids ${where} GROUP BY lang`);
 
-  const increment = (counter, value) => {
-    if (!value) return;
-    counter[value] = (counter[value] || 0) + 1;
-  };
+      const formatGroup = (rows, field) =>
+        rows.reduce((acc, row) => {
+          acc[row[field]] = Number(row.count);
+          return acc;
+        }, {});
 
-  const updateStats = (target, data) => {
-    target.idcount++;
-    if (data.isdeb) target.isdebcount++;
-    if (data.trayena) target.trayenacount++;
-    if (data.wifiena) target.wifienacount++;
-    if (data.defaultos) target.defaultoscount++;
-    if (data.weirdpc) target.weirdpccount++;
-
-    if (data.launch) {
-      target.launchcount.normal += data.launch.normal || 0;
-      target.launchcount.tray += data.launch.tray || 0;
+      result[key] = {
+        id: Number(idcount[0].count),
+        isdeb: Number(isdebcount[0].count),
+        trayena: Number(trayenacount[0].count),
+        wifiena: Number(wifienacount[0].count),
+        defaultos: Number(defaultoscount[0].count),
+        weirdpc: Number(weirdpccount[0].count),
+        version: formatGroup(versioncount, 'version'),
+        build: formatGroup(buildcount, 'build'),
+        utsversion: formatGroup(utsversioncount, 'utsversion'),
+        pcmodel: formatGroup(pcmodelcount, 'pcmodel'),
+        osversion: formatGroup(osversioncount, 'osversion'),
+        lang: formatGroup(langcount, 'lang')
+      };
     }
 
-    increment(target.langcount, data.lang);
-    increment(target.versioncount, data.version);
-    increment(target.buildcount, data.build);
-    increment(target.utsversioncount, data.utsversion);
-    increment(target.pcmodelcount, data.pcmodel);
-    increment(target.pcyearcount, data.pcyear);
-    increment(target.osversioncount, data.osversion);
-  };
-
-  for (const [id, data] of Object.entries(jsonData)) {
-    if (ignoredJsonData[id]) continue;
-
-    updateStats(total, data);
-
-    const lastRequest = moment(data.lastrequest, 'YYYY-MM-DD HH:mm:ss');
-    if (lastRequest.isAfter(oneMonthAgo)) updateStats(active, data);
-    else updateStats(outdated, data);
+    res.setHeader('Content-Type', 'application/json');
+    res.send(result);
   }
+  catch (error) {
+    write2error(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
 
-  res.setHeader('Content-Type', 'application/json');
-  res.send(JSON.stringify({ total, active, outdated }, null, 2));
+app.get('/ut-stats/get-stats/launch', async (req, res) => {
+  try {
+    logNewRequest(req);
+
+    const [normalLaunches] = await dbConnection.execute(`SELECT SUM(normal) AS count FROM launches`);
+    const [trayLaunches] = await dbConnection.execute(`SELECT SUM(tray) AS count FROM launches`);
+
+    res.setHeader('Content-Type', 'application/json');
+    res.send(JSON.stringify({
+      total: Number(trayLaunches[0].count) + Number(normalLaunches[0].count),
+      mode: {
+        normal: Number(normalLaunches[0].count),
+        tray: Number(trayLaunches[0].count)
+      }
+    }, null, 2));
+  }
+  catch (error) {
+    write2error(error);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
 app.get('/ut-stats/get-stats/usage', async (req, res) => {
-  logNewRequest(req);
+  try {
+    logNewRequest(req);
 
-  const rawData = await fs.readFile(path.join('data', 'usage.json'), 'utf8');
-  const jsonData = JSON.parse(rawData);
+    const [usage] = await dbConnection.execute(`SELECT action, SUM(count) AS count FROM usages GROUP BY action`);
 
-  let totalcount = 0;
-  const actioncount = {};
+    const usageCount = usage.reduce((acc, row) => {
+      acc[row.action] = Number(row.count);
+      return acc;
+    }, {});
 
-  for (const actions of Object.values(jsonData)) {
-    for (const [action, count] of Object.entries(actions)) {
-      totalcount += count;
-      actioncount[action] = (actioncount[action] || 0) + count;
-    }
+    res.setHeader('Content-Type', 'application/json');
+    res.send(JSON.stringify({
+      total: Object.values(usageCount).reduce((sum, count) => sum + count, 0),
+      action: usageCount
+    }, null, 2));
   }
-
-  res.setHeader('Content-Type', 'application/json');
-  res.send(JSON.stringify({ totalcount, actioncount }, null, 2));
+  catch (error) {
+    write2error(error);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
 app.get('/ut-stats/get-stats/check', async (req, res) => {
-  logNewRequest(req);
+  try {
+    logNewRequest(req);
 
-  const rawData = await fs.readFile(path.join('data', 'check.json'), 'utf8');
-  const jsonData = JSON.parse(rawData);
+    const [checks] = await dbConnection.execute(`SELECT variable, value, COUNT(*) AS count FROM checks GROUP BY variable, value`);
 
-  const checkcount = {};
-
-  for (const checks of Object.values(jsonData)) {
-    for (const [check, value] of Object.entries(checks)) {
-      if (value === true) {
-        checkcount[check] = (checkcount[check] || 0) + 1;
+    const checkCount = checks.reduce((acc, row) => {
+      if (!acc[row.variable]) {
+        acc[row.variable] = {};
       }
-    }
-  }
+      acc[row.variable][row.value] = Number(row.count);
+      return acc;
+    }, {});
 
-  res.setHeader('Content-Type', 'application/json');
-  res.send(JSON.stringify({ checkcount }, null, 2));
+    res.setHeader('Content-Type', 'application/json');
+    res.send(JSON.stringify(checkCount, null, 2));
+  }
+  catch (error) {
+    write2error(error);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
 app.listen(port, () => {
-  write2log(`UT Stats server\nby STY1001\nStarted on port ${port}\n\n`);
+  write2log(`Started on port ${port}\n`);
 });
