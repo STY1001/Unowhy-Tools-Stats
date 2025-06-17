@@ -116,7 +116,12 @@ app.post('/ut-stats', async (req, res) => {
       return;
     }
 
-    write2log(`ID: ${id}\nVersion: ${version}\nBuild: ${build}\nUTS Version: ${utsversion}\nPC Model: ${pcmodel}\nWeird PC: ${weirdpc}\nDefault OS: ${defaultos}\nOS Version: ${osversion}\nLang: ${lang}\nLaunch Mode: ${launchmode}\nTray Enabled: ${trayena}\nDebug version: ${isdeb}\nWifi Sync Enabled: ${wifiena}`);
+    let postbuild = build;
+    if (build === '165680924'){
+      postbuild = '1656190924'; // Fix for build 165680924 (Release 30.00)
+    }
+
+    write2log(`ID: ${id}\nVersion: ${version}\nBuild: ${postbuild}\nUTS Version: ${utsversion}\nPC Model: ${pcmodel}\nWeird PC: ${weirdpc}\nDefault OS: ${defaultos}\nOS Version: ${osversion}\nLang: ${lang}\nLaunch Mode: ${launchmode}\nTray Enabled: ${trayena}\nDebug version: ${isdeb}\nWifi Sync Enabled: ${wifiena}`);
 
     const sql1 = `INSERT INTO ids (id, version, build, utsversion, pcmodel, weirdpc, defaultos, osversion, lang, trayena, isdeb, wifiena, lastrequest)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -134,7 +139,7 @@ app.post('/ut-stats', async (req, res) => {
     wifiena = VALUES(wifiena),
     lastrequest = VALUES(lastrequest);`
     const lastRequest = moment().format('YYYY-MM-DD HH:mm:ss');
-    const values = [id, version, build, utsversion, pcmodel, weirdpc, defaultos, osversion, lang, trayena, isdeb, wifiena, lastRequest];
+    const values = [id, version, postbuild, utsversion, pcmodel, weirdpc, defaultos, osversion, lang, trayena, isdeb, wifiena, lastRequest];
 
     try {
       await dbConnection.execute(sql1, values);
@@ -394,7 +399,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
       const [weirdpccount] = await dbConnection.execute(`SELECT COUNT(*) AS count FROM ids ${where && where + ' AND weirdpc = 1'}`);
 
       const [versioncount] = await dbConnection.execute(`SELECT version, COUNT(*) AS count FROM ids ${where} GROUP BY version ORDER BY version ASC`);
-      const [buildcount] = await dbConnection.execute(`SELECT build, COUNT(*) AS count FROM ids ${where} GROUP BY build ORDER BY build ASC`);
+      const [buildcount] = await dbConnection.execute(`SELECT build, COUNT(*) AS count FROM ids ${where} GROUP BY build ORDER BY STR_TO_DATE(build, '%H%i%d%m%y') ASC`);
       const [utsversioncount] = await dbConnection.execute(`SELECT utsversion, COUNT(*) AS count FROM ids ${where} GROUP BY utsversion ORDER BY utsversion ASC`);
       const [pcmodelcount] = await dbConnection.execute(`SELECT pcmodel, COUNT(*) AS count FROM ids ${where} GROUP BY pcmodel ORDER BY pcmodel ASC`);
       const [osversioncount] = await dbConnection.execute(`SELECT osversion, COUNT(*) AS count FROM ids ${where} GROUP BY osversion ORDER BY osversion ASC`);
@@ -423,7 +428,7 @@ app.get('/ut-stats/get-stats', async (req, res) => {
     }
 
     res.setHeader('Content-Type', 'application/json');
-    res.send(result);
+    res.send(JSON.stringify(result, null, 2));
   }
   catch (error) {
     write2error(error);
