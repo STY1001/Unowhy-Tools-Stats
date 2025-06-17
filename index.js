@@ -393,12 +393,12 @@ app.get('/ut-stats/get-stats', async (req, res) => {
       const [defaultoscount] = await dbConnection.execute(`SELECT COUNT(*) AS count FROM ids ${where && where + ' AND defaultos = 1'}`);
       const [weirdpccount] = await dbConnection.execute(`SELECT COUNT(*) AS count FROM ids ${where && where + ' AND weirdpc = 1'}`);
 
-      const [versioncount] = await dbConnection.execute(`SELECT version, COUNT(*) AS count FROM ids ${where} GROUP BY version`);
-      const [buildcount] = await dbConnection.execute(`SELECT build, COUNT(*) AS count FROM ids ${where} GROUP BY build`);
-      const [utsversioncount] = await dbConnection.execute(`SELECT utsversion, COUNT(*) AS count FROM ids ${where} GROUP BY utsversion`);
-      const [pcmodelcount] = await dbConnection.execute(`SELECT pcmodel, COUNT(*) AS count FROM ids ${where} GROUP BY pcmodel`);
-      const [osversioncount] = await dbConnection.execute(`SELECT osversion, COUNT(*) AS count FROM ids ${where} GROUP BY osversion`);
-      const [langcount] = await dbConnection.execute(`SELECT lang, COUNT(*) AS count FROM ids ${where} GROUP BY lang`);
+      const [versioncount] = await dbConnection.execute(`SELECT version, COUNT(*) AS count FROM ids ${where} GROUP BY version ORDER BY version ASC`);
+      const [buildcount] = await dbConnection.execute(`SELECT build, COUNT(*) AS count FROM ids ${where} GROUP BY build ORDER BY build ASC`);
+      const [utsversioncount] = await dbConnection.execute(`SELECT utsversion, COUNT(*) AS count FROM ids ${where} GROUP BY utsversion ORDER BY utsversion ASC`);
+      const [pcmodelcount] = await dbConnection.execute(`SELECT pcmodel, COUNT(*) AS count FROM ids ${where} GROUP BY pcmodel ORDER BY pcmodel ASC`);
+      const [osversioncount] = await dbConnection.execute(`SELECT osversion, COUNT(*) AS count FROM ids ${where} GROUP BY osversion ORDER BY osversion ASC`);
+      const [langcount] = await dbConnection.execute(`SELECT lang, COUNT(*) AS count FROM ids ${where} GROUP BY lang ORDER BY lang ASC`);
 
       const formatGroup = (rows, field) =>
         rows.reduce((acc, row) => {
@@ -457,7 +457,7 @@ app.get('/ut-stats/get-stats/usage', async (req, res) => {
   try {
     logNewRequest(req);
 
-    const [usage] = await dbConnection.execute(`SELECT action, SUM(count) AS count FROM usages GROUP BY action`);
+    const [usage] = await dbConnection.execute(`SELECT action, SUM(count) AS count FROM usages GROUP BY action ORDER BY action ASC`);
 
     const usageCount = usage.reduce((acc, row) => {
       acc[row.action] = Number(row.count);
@@ -480,7 +480,7 @@ app.get('/ut-stats/get-stats/check', async (req, res) => {
   try {
     logNewRequest(req);
 
-    const [checks] = await dbConnection.execute(`SELECT variable, value, COUNT(*) AS count FROM checks GROUP BY variable, value`);
+    const [checks] = await dbConnection.execute(`SELECT variable, value, COUNT(*) AS count FROM checks GROUP BY variable, value ORDER BY variable ASC`);
 
     const checkCount = checks.reduce((acc, row) => {
       if (!acc[row.variable]) {
