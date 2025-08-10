@@ -363,6 +363,10 @@ app.post('/ut-stats/check', async (req, res) => {
   }
 });
 
+app.head('/ut-stats', (req, res) => {
+  res.sendStatus(200);
+});
+
 app.get('/ut-stats', async (req, res) => {
   logNewRequest(req);
 
