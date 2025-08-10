@@ -248,16 +248,18 @@ app.post('/ut-stats/crash', async (req, res) => {
     }
     write2log(`ID: ${id}\nVersion: ${version}\nBuild: ${build}\nUTS Version: ${utsversion}\nDebug version: ${isdeb}\nCrash ID: ${crashid}\nMessage: ${message}`);
 
-    const sql = `INSERT INTO crashes (id, version, build, utsversion, isdeb, crash, message)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    const sql = `INSERT INTO crashes (id, version, build, utsversion, isdeb, crash, message, date)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE
     version = VALUES(version),
     build = VALUES(build),
     utsversion = VALUES(utsversion),
     isdeb = VALUES(isdeb),
     crash = VALUES(crash),
-    message = VALUES(message);`;
-    const values = [id, version, build, utsversion, isdeb, crashid, message];
+    message = VALUES(message), 
+    date = VALUES(date);`;
+    const date = moment().format('YYYY-MM-DD HH:mm:ss');
+    const values = [id, version, build, utsversion, isdeb, crashid, message, date];
     try {
       await dbConnection.execute(sql, values);
       write2log(`Crash data for ID ${id} updated successfully.`);
