@@ -111,18 +111,51 @@ app.post('/ut-stats', async (req, res) => {
     const normalizedBody = normalizeBooleans(req.body);
     const { id, version, build, utsversion, pcsku, pcmodel, weirdpc, defaultos, osversion, lang, launchmode, trayena, isdeb, wifiena } = normalizedBody;
 
-    const oldVerstionConvert = {
-      "Y14 Plus i3 IDF": "Y14 Plus i3 (11th) IDF",
-      "Y14 Plus i5 IDF": "Y14 Plus i5 (11th) IDF",
-      "Y14 Plus i3": "Y14 Plus i3 (11th)",
-      "Y14 Plus i5": "Y14 Plus i5 (11th)",
-      "Y5OPS i3 2022": "Y5OPS i3 (11th) 2022",
-      "Y5OPS i5 2022": "Y5OPS i5 (11th) 2022",
-      "Y14 Plus i3 (Old)": "Y14 Plus i3 (10th)",
-      "Y14 Plus i5 (New) IDF": "Y14 Plus i5 (12th) IDF",
-      "Y14 Plus i5 (New)": "Y14 Plus i5 (12th)",
-      "Y5OPS i5 2024": "Y5OPS i5 (12th) 2024",
+    const oldModelConvert = {
+      'Y14 Plus i3 IDF': 'Y14 Plus i3 (11th) IDF',
+      'Y14 Plus i5 IDF': 'Y14 Plus i5 (11th) IDF',
+      'Y14 Plus i3': 'Y14 Plus i3 (11th)',
+      'Y14 Plus i5': 'Y14 Plus i5 (11th)',
+      'Y5OPS i3 2022': 'Y5OPS i3 (11th) 2022',
+      'Y5OPS i5 2022': 'Y5OPS i5 (11th) 2022',
+      'Y14 Plus i3 (Old)': 'Y14 Plus i3 (10th)',
+      'Y14 Plus i5 (New)': 'Y14 Plus i5 (12th)',
+      'Y14 Plus i5 (New) IDF': 'Y14 Plus i5 (12th) IDF',
+      'Y5OPS i5 2024': 'Y5OPS i5 (12th) 2024',
     }
+
+    const modelToSKU = {
+      'Y13 Gen 1 2023 IDF': 'Y13G113S4EI',
+      'Y13 Gen 1 2022 IDF': 'Y13G012S4EI',
+      'Y13 Gen 1 2021 IDF': 'Y13G011S4EI',
+      'Y13 Gen 1 2020 IDF': 'Y13G010S4EI',
+      'Y13 Gen 1 2019 IDF': 'Y13G002S4EI',
+      'Y13 Gen 1 2023': 'Y13G113S4E',
+      'Y13 Gen 1 2022': 'Y13G012S4E',
+      'Y13 Gen 1 2021': 'Y13G011S4E',
+      'Y13 Gen 1 2020': 'Y13G010S4E',
+      'Y13 Gen 1 2019': 'Y13G002S4E',
+      'Y13 Gen 1 m3': '20180329314',
+      'Y14 Plus i3 (11th) IDF': 'Y14G310S2MI',
+      'Y14 Plus i5 (11th) IDF': 'Y14G520S2MI',
+      'Y14 Plus i3 (11th)': 'Y14G310S2M',
+      'Y14 Plus i5 (11th)': 'Y14G520S2M',
+      'Y11 360 Gen 1': 'Y11G001S4E',
+      'Y11 360 Gen 2': 'Y11G201S2M',
+      'Y5OPS i3 (11th) 2022': 'OPSG310S2M',
+      'Y5OPS i5 (11th) 2022': 'OPSG530S2M',
+      'Y13 Gen 2 2024 IDF': 'Y13G201S4EI',
+      'Y13 Gen 2 2024': 'Y13G201S4E',
+      'Y14 Plus i3 (10th)': 'Y14G102S2E',
+      'Y14 Plus i5 (12th) IDF': 'Y14G530S2MI',
+      'Y14 Plus i5 (12th)': 'Y14G530S2M',
+      'Y13 Gen 2 2025 IDF': 'Y13G202S4EI',
+      'Y13 Gen 2 2025': 'Y13G202S4E',
+      'Y5OPS i5 (12th) 2024': 'OPSG540S2W',
+      'STY L13 Gen 1': 'STYL13G1',
+      'STY L13 Gen 2': 'STYL13G2',
+      'STY DS5OPS': 'STYDS5OPS'
+    };
 
     if (!isUUID(id)) {
       write2error(`Invalid ID format: ${id}`);
@@ -135,7 +168,17 @@ app.post('/ut-stats', async (req, res) => {
       postbuild = '1656190924'; // Fix for build 165680924 (Release 30.00)
     }
 
-    write2log(`ID: ${id}\nVersion: ${version}\nBuild: ${postbuild}\nUTS Version: ${utsversion}\nPC SKU: ${pcsku}\nPC Model: ${pcmodel}\nWeird PC: ${weirdpc}\nDefault OS: ${defaultos}\nOS Version: ${osversion}\nLang: ${lang}\nLaunch Mode: ${launchmode}\nTray Enabled: ${trayena}\nDebug version: ${isdeb}\nWifi Sync Enabled: ${wifiena}`);
+    let postpcmodel = pcmodel;
+    if (oldModelConvert[pcmodel]){
+      postpcmodel = oldModelConvert[pcmodel] // Convert old model names to new ones
+    }
+
+    let postpcsku = pcsku;
+    if (!pcsku){
+      postpcsku = modelToSKU[pcsku] // Convert model name to SKU if SKU is missing
+    }
+
+    write2log(`ID: ${id}\nVersion: ${version}\nBuild: ${postbuild}\nUTS Version: ${utsversion}\nPC SKU: ${postpcsku}\nPC Model: ${postpcmodel}\nWeird PC: ${weirdpc}\nDefault OS: ${defaultos}\nOS Version: ${osversion}\nLang: ${lang}\nLaunch Mode: ${launchmode}\nTray Enabled: ${trayena}\nDebug version: ${isdeb}\nWifi Sync Enabled: ${wifiena}`);
 
     const sql1 = `INSERT INTO ids (id, version, build, utsversion, pcsku, pcmodel, weirdpc, defaultos, osversion, lang, trayena, isdeb, wifiena, lastrequest)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -154,7 +197,7 @@ app.post('/ut-stats', async (req, res) => {
     wifiena = VALUES(wifiena),
     lastrequest = VALUES(lastrequest);`
     const lastRequest = moment().format('YYYY-MM-DD HH:mm:ss');
-    const values = [id, version, postbuild, utsversion, pcsku, pcmodel, weirdpc, defaultos, osversion, lang, trayena, isdeb, wifiena, lastRequest];
+    const values = [id, version, postbuild, utsversion, postpcsku, postpcmodel, weirdpc, defaultos, osversion, lang, trayena, isdeb, wifiena, lastRequest];
 
     try {
       await dbConnection.execute(sql1, values);
