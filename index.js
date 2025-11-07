@@ -175,13 +175,13 @@ app.post('/ut-stats', async (req, res) => {
 
     let postpcsku = pcsku;
     if (!pcsku){
-      postpcsku = modelToSKU[pcsku] // Convert model name to SKU if SKU is missing
+      postpcsku = modelToSKU[postpcmodel] // Convert model name to SKU if SKU is missing
     }
 
     write2log(`ID: ${id}\nVersion: ${version}\nBuild: ${postbuild}\nUTS Version: ${utsversion}\nPC SKU: ${postpcsku}\nPC Model: ${postpcmodel}\nWeird PC: ${weirdpc}\nDefault OS: ${defaultos}\nOS Version: ${osversion}\nLang: ${lang}\nLaunch Mode: ${launchmode}\nTray Enabled: ${trayena}\nDebug version: ${isdeb}\nWifi Sync Enabled: ${wifiena}`);
 
     const sql1 = `INSERT INTO ids (id, version, build, utsversion, pcsku, pcmodel, weirdpc, defaultos, osversion, lang, trayena, isdeb, wifiena, lastrequest)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE
     version = VALUES(version),
     build = VALUES(build),
